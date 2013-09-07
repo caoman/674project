@@ -1,18 +1,18 @@
 '''
 Created on Sep 4, 2013
 
-@author: lilong
+@author: lilong,man
 '''
 import nltk, string, os
 from nltk.tokenize import word_tokenize, wordpunct_tokenize, sent_tokenize
 from nltk.corpus import stopwords
 from nltk import PorterStemmer
-from sets import Set
+#from sets import Set
 from bs4 import BeautifulSoup
 
 docCardinality = 0  #record the number of doc files in total
 docList = []
-tokenList = Set()
+tokenList = set()
 
 class Doc:
     sentences = []
@@ -21,16 +21,19 @@ class Doc:
         self.topic = topic
         self.title = title
         self.text = text
+	self.tokens = None 
 
     #get the tokens for all sentences, remove stop words, punctuation, stemming and lemmatization 
     def getAllTokens(self):
-        #nltk.download()
-        sents = sent_tokenize(self.text)
+        if self.tokens is not None:
+	    return self.tokens
+	sents = sent_tokenize(self.text)
         tokens = [token for sent in sents for token in word_tokenize(sent) if token not in stopwords.words('english') and string.punctuation.find(token) == -1]
         porter = PorterStemmer()
         lmtzr = nltk.stem.wordnet.WordNetLemmatizer()
         tokens = map(lambda token: lmtzr.lemmatize(porter.stem(token)), tokens)
-        return tokens
+        self.tokens = tokens
+	return tokens
     
     def getFreqVec(self):
         tokens = self.getAllTokens()
@@ -53,16 +56,19 @@ class Doc:
     def getTFIDFVec(self):
         print "aa"
 
+
 #process each file
 def processFile(filename):
     global docCardinality, docList, tokenList
     
     infile = open(filename, "r")
+
     soup = BeautifulSoup(infile, "xml") #must explicitly 
 
-    entries = soup.find_all('REUTERS')  #capital sensitive
+    entries = soup.find_all("REUTERS")  #capital sensitive
     docCardinality += len(entries)
 
+    print len(entries)
     for entry in entries:
         text = entry.find("TEXT")
         if text is None: continue
@@ -78,11 +84,17 @@ def processFile(filename):
         doc = Doc(topicText, titleText, bodyText)
         docList.append(doc)
         tokenList = tokenList.union(doc.getAllTokens())
+	doc.outputFreqVec()
     
 if __name__ == "__main__":
-    for file in os.listdir("Data"):
-        processFile("Data/" + file)
-
+    #dirPrefix='Data/'
+    dirPrefix = '/home/0/srini/WWW/674/public/reuters/'
+    #nltk.download()
+    for file in os.listdir(dirPrefix):
+	print file
+        processFile(dirPrefix + file)
+	break
+    print tokenList
     
             
     
