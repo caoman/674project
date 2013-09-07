@@ -1,3 +1,7 @@
 bs4
 *.sgm.txt
 *.sgm
+classes.pyc
+featureVectors.txt
+nltk
+yaml

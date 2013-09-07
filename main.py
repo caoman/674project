@@ -13,6 +13,7 @@ from bs4 import BeautifulSoup
 docCardinality = 0  #record the number of doc files in total
 docList = []
 tokenList = set()
+tokenIDF = {}
 
 class Doc:
     sentences = []
@@ -22,6 +23,7 @@ class Doc:
         self.title = title
         self.text = text
 	self.tokens = None 
+	self.freqVec = None
 
     #get the tokens for all sentences, remove stop words, punctuation, stemming and lemmatization 
     def getAllTokens(self):
@@ -36,6 +38,8 @@ class Doc:
 	return tokens
     
     def getFreqVec(self):
+        if self.freqVec is not None:
+	    return self.freqVec
         tokens = self.getAllTokens()
         freqVec = {}
         for token in tokens:
@@ -43,7 +47,8 @@ class Doc:
                 freqVec[token] += 1
             else:
                 freqVec[token] = 0
-        return freqVec
+        self.freqVec = freqVec
+	return freqVec
     
     def outputFreqVec(self):
         freqVec = self.getFreqVec()
@@ -54,7 +59,20 @@ class Doc:
         feaVecFile.close()
         
     def getTFIDFVec(self):
-        print "aa"
+        
+	print "aa"
+
+
+def computeIDF():
+    global tokenIDF
+    if len(tokenIDF)>0: return
+    cardi_D = len(docList)
+    for t in tokenList:
+        count_d = 0;
+	for doc in docList:
+	    if t in doc.tokens:
+	        count_d += 1
+        tokenIDF[t] = math.log10(cardi_D / count_d)
 
 
 #process each file
