@@ -95,23 +95,28 @@ def computeIDF():
 
 #output vector
 def outputVec(vector, prefix):
-        vecStr = prefix + "\n{" + ",".join([key + ":" + str(val) for key, val in vector.iteritems()]) + "}\n"
-        print vecStr
-        feaVecFile = open("featureVectors.txt", "a")
-        feaVecFile.write(vecStr)
-        feaVecFile.close()
+    vecStr = prefix + "\n{" + ",".join([key + ":" + str(val) for key, val in vector.iteritems()]) + "}\n"
+    print vecStr
+    feaVecFile = open("featureVectors.txt", "a")
+    feaVecFile.write(vecStr)
+    feaVecFile.close()
 
 #process each file
 def processFile(filename):
     global docCardinality, docList, tokenList
     
+    preTag = "<REUTERSList>"
+    posTag = "</REUTERSList>"
     infile = open(filename, "r")
-
-    soup = BeautifulSoup(infile, "xml") #must explicitly 
-
+    firstLine = infile.readline()
+    fileContent = infile.read()
+    fileContent = firstLine + preTag + fileContent + posTag
+    
+    soup = BeautifulSoup(fileContent, "xml") #must explicitly 
     entries = soup.find_all("REUTERS")  #capital sensitive
     docCardinality += len(entries)
 
+    infile.close()
     print len(entries)
     for entry in entries:
         text = entry.find("TEXT")
@@ -133,14 +138,14 @@ def processFile(filename):
         outputVec(doc.getFreqVec(), doc.id +" "+ doc.topic)
     
 if __name__ == "__main__":
-    #dirPrefix='Data/'
-    dirPrefix = '/home/0/srini/WWW/674/public/reuters/'
+    dirPrefix='Data/'
+    #dirPrefix = '/home/0/srini/WWW/674/public/reuters/'
     #nltk.download()
     for file in os.listdir(dirPrefix):
-        print file
+        #print file
         processFile(dirPrefix + file)
         break
-    print tokenList
+    #print tokenList
     
     computeIDF()
     for doc in docList:
