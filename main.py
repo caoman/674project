@@ -1,3 +1,4 @@
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 '''
 Created on Sep 4, 2013
 
@@ -22,24 +23,24 @@ class Doc:
         self.topic = topic
         self.title = title
         self.text = text
-	self.tokens = None 
-	self.freqVec = None
+        self.tokens = None
+        self.freqVec = None
 
     #get the tokens for all sentences, remove stop words, punctuation, stemming and lemmatization 
     def getAllTokens(self):
         if self.tokens is not None:
-	    return self.tokens
-	sents = sent_tokenize(self.text)
+            return self.tokens
+        sents = sent_tokenize(self.text)
         tokens = [token for sent in sents for token in word_tokenize(sent) if token not in stopwords.words('english') and string.punctuation.find(token) == -1]
         porter = PorterStemmer()
         lmtzr = nltk.stem.wordnet.WordNetLemmatizer()
         tokens = map(lambda token: lmtzr.lemmatize(porter.stem(token)), tokens)
         self.tokens = tokens
-	return tokens
+        return tokens
     
     def getFreqVec(self):
         if self.freqVec is not None:
-	    return self.freqVec
+            return self.freqVec
         tokens = self.getAllTokens()
         freqVec = {}
         for token in tokens:
@@ -48,7 +49,7 @@ class Doc:
             else:
                 freqVec[token] = 0
         self.freqVec = freqVec
-	return freqVec
+        return freqVec
     
     def outputFreqVec(self):
         freqVec = self.getFreqVec()
@@ -59,8 +60,10 @@ class Doc:
         feaVecFile.close()
         
     def getTFIDFVec(self):
-        
-	print "aa"
+        if len(tokenIDF)==0:
+            print 'IDF has not been computed!'
+            return
+        print "aa"
 
 
 def computeIDF():
@@ -69,11 +72,10 @@ def computeIDF():
     cardi_D = len(docList)
     for t in tokenList:
         count_d = 0;
-	for doc in docList:
-	    if t in doc.tokens:
-	        count_d += 1
+        for doc in docList:
+            if t in doc.tokens:
+                count_d += 1
         tokenIDF[t] = math.log10(cardi_D / count_d)
-
 
 #process each file
 def processFile(filename):
@@ -102,17 +104,15 @@ def processFile(filename):
         doc = Doc(topicText, titleText, bodyText)
         docList.append(doc)
         tokenList = tokenList.union(doc.getAllTokens())
-	doc.outputFreqVec()
+        doc.outputFreqVec()
     
 if __name__ == "__main__":
     #dirPrefix='Data/'
     dirPrefix = '/home/0/srini/WWW/674/public/reuters/'
     #nltk.download()
     for file in os.listdir(dirPrefix):
-	print file
+        print file
         processFile(dirPrefix + file)
-	break
+        break
     print tokenList
-    
-            
     
