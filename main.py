@@ -4,7 +4,7 @@ Created on Sep 4, 2013
 
 @author: lilong,man
 '''
-import nltk, string, os
+import nltk, string, os, math
 from nltk.tokenize import word_tokenize, wordpunct_tokenize, sent_tokenize
 from nltk.corpus import stopwords
 from nltk import PorterStemmer
@@ -19,12 +19,14 @@ tokenIDF = {}
 class Doc:
     sentences = []
     
-    def __init__(self, topic, title, text):
+    def __init__(self, id, topic, title, text):
+        self.id = id
         self.topic = topic
         self.title = title
         self.text = text
         self.tokens = None
         self.freqVec = None
+        self.tfidfVec = None
 
     #get the tokens for all sentences, remove stop words, punctuation, stemming and lemmatization 
     def getAllTokens(self):
@@ -50,7 +52,7 @@ class Doc:
                 freqVec[token] = 0
         self.freqVec = freqVec
         return freqVec
-    
+    """    
     def outputFreqVec(self):
         freqVec = self.getFreqVec()
         vecStr  = self.topic + "\n{" + ",".join([key + ":" + str(val) for key, val in freqVec.iteritems()]) + "}\n" 
@@ -58,24 +60,46 @@ class Doc:
         feaVecFile = open("featureVectors.txt", "a")
         feaVecFile.write(vecStr)
         feaVecFile.close()
-        
+    """ 
     def getTFIDFVec(self):
+        global tokenIDF
+        if self.tfidfVec is not None:
+            return self.tfidfVec
         if len(tokenIDF)==0:
             print 'IDF has not been computed!'
             return
-        print "aa"
 
+        tfidfVec = {}
+        freqVec = self.getFreqVec()
+        tokens = self.getAllTokens()
+        cardi_d = float(len(tokens))
+        for token, freq in freqVec.iteritems():
+            tf = freq/cardi_d
+            tfidf = tf * tokenIDF[token]
+            tfidfVec[token] = tfidf
+
+        self.tfidfVec = tfidfVec
+        return tfidfVec
 
 def computeIDF():
-    global tokenIDF
+    global tokenIDF, docList, tokenList
     if len(tokenIDF)>0: return
-    cardi_D = len(docList)
+    cardi_D = float(len(docList))
     for t in tokenList:
-        count_d = 0;
+        count_d = 0
         for doc in docList:
-            if t in doc.tokens:
+            if t in doc.getAllTokens():
                 count_d += 1
         tokenIDF[t] = math.log10(cardi_D / count_d)
+        #tokenIDF[t] = 1
+
+#output vector
+def outputVec(vector, prefix):
+        vecStr = prefix + "\n{" + ",".join([key + ":" + str(val) for key, val in vector.iteritems()]) + "}\n"
+        print vecStr
+        feaVecFile = open("featureVectors.txt", "a")
+        feaVecFile.write(vecStr)
+        feaVecFile.close()
 
 #process each file
 def processFile(filename):
@@ -100,11 +124,13 @@ def processFile(filename):
         if title is not None: titleText = title.getText()
         body = text.BODY      
         if body is not None: bodyText = body.getText()
+        
+        id = entry.get('NEWID')
 
-        doc = Doc(topicText, titleText, bodyText)
+        doc = Doc(id, topicText, titleText, bodyText)
         docList.append(doc)
         tokenList = tokenList.union(doc.getAllTokens())
-        doc.outputFreqVec()
+        outputVec(doc.getFreqVec(), doc.id +" "+ doc.topic)
     
 if __name__ == "__main__":
     #dirPrefix='Data/'
@@ -115,4 +141,8 @@ if __name__ == "__main__":
         processFile(dirPrefix + file)
         break
     print tokenList
+    
+    computeIDF()
+    for doc in docList:
+        outputVec(doc.getTFIDFVec(), doc.id)
     
