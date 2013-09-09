@@ -49,7 +49,7 @@ class Doc:
             if freqVec.has_key(token):
                 freqVec[token] += 1
             else:
-                freqVec[token] = 0
+                freqVec[token] = 1
         self.freqVec = freqVec
         return freqVec
     """    
@@ -69,12 +69,17 @@ class Doc:
             print 'IDF has not been computed!'
             return
 
+        max_freq = 1
         tfidfVec = {}
         freqVec = self.getFreqVec()
+        for k,v in freqVec.iteritems():
+            if v>max_freq:
+                max_freq=v
+
         tokens = self.getAllTokens()
-        cardi_d = float(len(tokens))
+        #cardi_d = float(len(tokens))
         for token, freq in freqVec.iteritems():
-            tf = freq/cardi_d
+            tf = 0.5 + (0.5*freq)/max_freq
             tfidf = tf * tokenIDF[token]
             tfidfVec[token] = tfidf
 
@@ -144,7 +149,7 @@ if __name__ == "__main__":
     for file in os.listdir(dirPrefix):
         #print file
         processFile(dirPrefix + file)
-        break
+        #break
     #print tokenList
     
     computeIDF()
