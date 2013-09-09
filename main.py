@@ -36,16 +36,15 @@ class Doc:
     def __tokenizeText(self, text):
         sents = sent_tokenize(text)
         tokens = [token for sent in sents for token in word_tokenize(sent) if token not in stopwords.words('english') and string.punctuation.find(token) == -1 and filterToken(token)]
+        taggedTokens = nltk.pos_tag(tokens) 
         #stemmer = nltk.stem.porter.PorterStemmer()
         #stemmer = nltk.stem.snowball.EnglishStemmer()
         lmtzr = nltk.stem.wordnet.WordNetLemmatizer()
-        #tokens = map(lambda token: lmtzr.lemmatize(stemmer.stem(token.lower())), tokens)
-        
+        #have a problem with pos
+        tokens = map(lambda taggedToken:  lmtzr.lemmatize(taggedToken[0].lower(), taggedToken[1]), taggedTokens)
         #first do pos-tagging, then use the tag to do lemmatization.
         # available tags for wordnet: http://wordnet.princeton.edu/man/morphy.7WN.html
-        
-        # Must first convert token to lowercase, in order to make wordnet work properly
-        tokens = map(lambda token: lmtzr.lemmatize(token.lower(), 'v'), tokens)
+        print tokens
         return tokens
     
     def getFreqVec(self):
@@ -162,12 +161,17 @@ def processFile(filename, outfile):
         doc = Doc(id, topics, titleText, bodyText)
         docList.append(doc)
         tokenList = tokenList.union(doc.tokens)
-        outputVec(outfile, doc.getFreqVec(), doc.id + " "+ str(doc.topics))
+        #outputVec(outfile, doc.getFreqVec(), doc.id + " "+ str(doc.topics))
     
 if __name__ == "__main__":
     dirPrefix='Data/'
     #dirPrefix = '/home/0/srini/WWW/674/public/reuters/'
-    #nltk.download()
+    #downloads the necessary packages
+    nltk.download("maxent_treebank_pos_tagger")
+    nltk.download("stopwords")
+    nltk.download("punkt")
+    nltk.download("wordnet")
+    
     feaVecFile = open("freqVectors.txt", "w") 
     for file in os.listdir(dirPrefix):
         #print file
