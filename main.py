@@ -5,21 +5,36 @@ Created on Sep 4, 2013
 @author: lilong,man
 '''
 import nltk, string, os, math
-from nltk.tokenize import word_tokenize, wordpunct_tokenize, sent_tokenize
+from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk.corpus import stopwords
-#from nltk import PorterStemmer
 from bs4 import BeautifulSoup
+from nltk.corpus import wordnet
 
-#docCardinality = 0  #record the number of doc files in total
-docList = []
-tokenList = set()
-tokenIDF = {}
+docList = []        #the number of docs in the corpus
+tokenList = set()   #the number of tokens in the corpus
+tokenIDF = {}       
+synonymDic = {}     #the synonym dictionary for the token
 
-def filterToken(token):
-    for c in token:
-        if c.isalpha():
+def isNum(token):
+    for c in token: 
+        if c.isalpha(): 
             return True
     return False
+
+#map the pos tag in treebank to the pos tag in wordnet, only verb, adjective, adverb, noun are left
+def getWordNetPos(treebankPos):
+    if treebankPos.startswith("NN"): return "n"
+    elif treebankPos.startswith("JJ"): return "a"
+    elif treebankPos.startswith("RB"): return "r"
+    elif treebankPos.startswith("VB"): return "v"
+    else: return None
+
+def getSynonyms(word):
+    global synonymDic
+    if synonymDic.has_key(word): return synonymDic[word]
+    synonyms = [lemma for syn in wordnet.synsets(word) for lemma in syn.lemma_names]
+    synonymDic[word] = synonyms
+    return synonyms
 
 class Doc:
     sentences = []
@@ -32,19 +47,25 @@ class Doc:
         self.freqVec = None
         self.tfidfVec = None
 
-    #compute the tokens for all sentences, remove stop words, punctuation, stemming and lemmatization, to lowercase 
     def __tokenizeText(self, text):
         sents = sent_tokenize(text)
-        tokens = [token for sent in sents for token in word_tokenize(sent) if token not in stopwords.words('english') and string.punctuation.find(token) == -1 and filterToken(token)]
-        taggedTokens = nltk.pos_tag(tokens) 
-        #stemmer = nltk.stem.porter.PorterStemmer()
-        #stemmer = nltk.stem.snowball.EnglishStemmer()
+        #remove stop words, punctuation, and numbers
+        tokens = [token for sent in sents for token in word_tokenize(sent) if token not in stopwords.words('english') and string.punctuation.find(token) == -1 and isNum(token)]
+        taggedTokens = nltk.pos_tag(tokens)
         lmtzr = nltk.stem.wordnet.WordNetLemmatizer()
-        #have a problem with pos
-        tokens = map(lambda taggedToken:  lmtzr.lemmatize(taggedToken[0].lower(), taggedToken[1]), taggedTokens)
-        #first do pos-tagging, then use the tag to do lemmatization.
-        # available tags for wordnet: http://wordnet.princeton.edu/man/morphy.7WN.html
-        print tokens
+        
+        #lemmatization
+        tokens = []
+        for taggedToken in taggedTokens:
+            pos = getWordNetPos(taggedToken[1])
+            if pos is not None: tokens.append(lmtzr.lemmatize(taggedToken[0].lower(), pos))
+        
+        #merge the synonym tokens
+        tokensLength = len(tokens)
+        for index, token in enumerate(tokens):
+            for i in range(index + 1, tokensLength):
+                synonyms = getSynonyms(token)
+                if tokens[i] in synonyms: tokens[i] = token
         return tokens
     
     def getFreqVec(self):
@@ -62,30 +83,20 @@ class Doc:
         #a simple function to determine the weight of a title word, just based on the length of the document
         titleWeight = int(len(tokens) * 0.05)
 
-
         for k in freqVec.keys():
             if k in titleWords:
                 freqVec[k] += titleWeight
             if freqVec[k]==1:
-                del freqVec[k]
+                del freqVec[k]      #the tokens with low frequency are delete
 
         self.freqVec = freqVec
         return freqVec
-    """    
-    def outputFreqVec(self):
-        freqVec = self.getFreqVec()
-        vecStr  = self.topic + "\n{" + ",".join([key + ":" + str(val) for key, val in freqVec.iteritems()]) + "}\n" 
-        print vecStr
-        feaVecFile = open("featureVectors.txt", "a")
-        feaVecFile.write(vecStr)
-        feaVecFile.close()
-    """ 
+
     def getTFIDFVec(self):
         global tokenIDF
         if self.tfidfVec is not None:
             return self.tfidfVec
-        if len(tokenIDF)==0:
-            print 'IDF has not been computed!'
+        if len(tokenIDF) == 0: 
             return
 
         max_freq = 1
@@ -95,10 +106,8 @@ class Doc:
             if v>max_freq:
                 max_freq=v
 
-        tokens = self.tokens
-        #cardi_d = float(len(tokens))
         for token, freq in freqVec.iteritems():
-            tf = 0.5 + (0.5*freq)/max_freq
+            tf = 0.5 + (0.5 * freq) / max_freq
             tfidf = tf * tokenIDF[token]
             tfidfVec[token] = tfidf
 
@@ -108,7 +117,6 @@ class Doc:
 def computeIDF():
     global tokenIDF, docList, tokenList
     
-    print "Computing global IDF..."
     if len(tokenIDF)>0: return
     cardi_D = float(len(docList))
     for t in tokenList:
@@ -117,13 +125,10 @@ def computeIDF():
             if t in doc.tokens:
                 count_d += 1
         tokenIDF[t] = math.log10(cardi_D / count_d)
-        #tokenIDF[t] = 1
 
 #output vector
 def outputVec(outfile, vector, prefix):
     vecStr = prefix + "\n{" + ",".join([key + ":" + str(val) for key, val in vector.iteritems()]) + "}\n"
-    #vecStr = prefix + "\n" + str(vector) + "\n"
-    print vecStr
     outfile.write(vecStr)
 
 #process each file
@@ -139,32 +144,27 @@ def processFile(filename, outfile):
     
     soup = BeautifulSoup(fileContent, "xml") #must explicitly 
     entries = soup.find_all("REUTERS")  #capital sensitive
-    #docCardinality += len(entries)
 
     infile.close()
-    print len(entries)
     for entry in entries:
         text = entry.find("TEXT")
         if text is None: continue
         
         titleText = bodyText = ""
-        #topics=[]
-        #if entry.get('TOPICS')!="NO":
-        topics = [t.getText() for t in entry.TOPICS.find_all('D')]
+        topics = ";".join([t.getText() for t in entry.TOPICS.find_all('D')])
         title = text.TITLE
         if title is not None: titleText = title.getText()
         body = text.BODY      
         if body is not None: bodyText = body.getText()
         
-        id = entry.get('NEWID')
-
+        id = entry.get("NEWID")
         doc = Doc(id, topics, titleText, bodyText)
         docList.append(doc)
         tokenList = tokenList.union(doc.tokens)
-        #outputVec(outfile, doc.getFreqVec(), doc.id + " "+ str(doc.topics))
+        outputVec(outfile, doc.getFreqVec(), doc.id + " " + str(doc.topics))
     
 if __name__ == "__main__":
-    dirPrefix='Data/'
+    dirPrefix= "Data/"
     #dirPrefix = '/home/0/srini/WWW/674/public/reuters/'
     #downloads the necessary packages
     nltk.download("maxent_treebank_pos_tagger")
@@ -173,16 +173,17 @@ if __name__ == "__main__":
     nltk.download("wordnet")
     
     feaVecFile = open("freqVectors.txt", "w") 
+    print "Computing Frequency vector..."
     for file in os.listdir(dirPrefix):
-        #print file
         processFile(dirPrefix + file, feaVecFile)
-        #break
-    #print tokenList
     feaVecFile.close()
+    print "Frequency vector is done!"
 
     tfidfFile = open("tfidfVectors.txt", "w")
+    print "Computing TFIDF vector..."
     computeIDF()
     for doc in docList:
-        outputVec(tfidfFile, doc.getTFIDFVec(), doc.id)
+        outputVec(tfidfFile, doc.getTFIDFVec(), doc.id + " " + str(doc.topics))
     tfidfFile.close()
+    print "TFIDF vector is done!"
     
