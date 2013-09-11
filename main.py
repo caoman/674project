@@ -12,10 +12,10 @@ from nltk.corpus import wordnet
 
 docList = []        #the number of docs in the corpus
 tokenList = set()   #the number of tokens in the corpus
-tokenIDF = {}       
+tokenIDF = {}       #the IDF value of each word in the corpus
 synonymDic = {}     #the synonym dictionary for the token
 
-def isNum(token):
+def containsAlpha(token):
     for c in token: 
         if c.isalpha(): 
             return True
@@ -49,16 +49,20 @@ class Doc:
 
     def __tokenizeText(self, text):
         sents = sent_tokenize(text)
-        #remove stop words, punctuation, and numbers
-        tokens = [token for sent in sents for token in word_tokenize(sent) if token not in stopwords.words('english') and string.punctuation.find(token) == -1 and isNum(token)]
-        taggedTokens = nltk.pos_tag(tokens)
+        tokenSents = [word_tokenize(sent) for sent in sents]
+        taggedSents = nltk.tag.batch_pos_tag(tokenSents)
         lmtzr = nltk.stem.wordnet.WordNetLemmatizer()
         
         #lemmatization
         tokens = []
-        for taggedToken in taggedTokens:
-            pos = getWordNetPos(taggedToken[1])
-            if pos is not None: tokens.append(lmtzr.lemmatize(taggedToken[0].lower(), pos))
+        #for taggedToken in taggedTokens:
+        for sent in taggedSents:
+            for taggedToken in sent:
+                token = taggedToken[0].lower()
+                #remove stop words, punctuation, and numbers
+                if len(token)>1 and token not in stopwords.words('english') and string.punctuation.find(token) == -1 and containsAlpha(token):
+                    pos = getWordNetPos(taggedToken[1])
+                    if pos is not None: tokens.append(lmtzr.lemmatize(token, pos))
         
         #merge the synonym tokens
         tokensLength = len(tokens)
@@ -66,6 +70,7 @@ class Doc:
             for i in range(index + 1, tokensLength):
                 synonyms = getSynonyms(token)
                 if tokens[i] in synonyms: tokens[i] = token
+       
         return tokens
     
     def getFreqVec(self):
@@ -81,7 +86,7 @@ class Doc:
         
         titleWords = self.__tokenizeText(self.title)
         #a simple function to determine the weight of a title word, just based on the length of the document
-        titleWeight = int(len(tokens) * 0.05)
+        titleWeight = int(1 + len(tokens) * 0.05)
 
         for k in freqVec.keys():
             if k in titleWords:
@@ -152,20 +157,24 @@ def processFile(filename, outfile):
         
         titleText = bodyText = ""
         topics = ";".join([t.getText() for t in entry.TOPICS.find_all('D')])
+        if len(topics)==0:
+            topics = "None"
         title = text.TITLE
         if title is not None: titleText = title.getText()
         body = text.BODY      
         if body is not None: bodyText = body.getText()
         
         id = entry.get("NEWID")
-        doc = Doc(id, topics, titleText, bodyText)
+        print id
+        #titleText is also considered as part of bodyText, in case the bodyText is empty.
+        doc = Doc(id, topics, titleText, titleText + "." + bodyText)
         docList.append(doc)
         tokenList = tokenList.union(doc.tokens)
         outputVec(outfile, doc.getFreqVec(), doc.id + " " + str(doc.topics))
     
 if __name__ == "__main__":
-    dirPrefix= "Data/"
-    #dirPrefix = '/home/0/srini/WWW/674/public/reuters/'
+    #dirPrefix= "Data/"
+    dirPrefix = '/home/0/srini/WWW/674/public/reuters/'
     #downloads the necessary packages
     nltk.download("maxent_treebank_pos_tagger")
     nltk.download("stopwords")
