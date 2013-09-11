@@ -2,9 +2,9 @@
 '''
 Created on Sep 4, 2013
 
-@author: lilong,man
+@author: lilong, man
 '''
-import nltk, string, os, math
+import nltk, string, os, math, sys
 from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk.corpus import stopwords
 from bs4 import BeautifulSoup
@@ -14,6 +14,7 @@ docList = []        #the number of docs in the corpus
 tokenList = set()   #the number of tokens in the corpus
 tokenIDF = {}       #the IDF value of each word in the corpus
 synonymDic = {}     #the synonym dictionary for the token
+procDocCnt = None   #the number of docs to be processed in each file
 
 def containsAlpha(token):
     for c in token: 
@@ -60,8 +61,8 @@ class Doc:
         for sent in taggedSents:
             for taggedToken in sent:
                 token = taggedToken[0].lower()
-                #remove stop words, punctuation, and numbers
-                if len(token)>1 and token not in stopwords.words('english') and string.punctuation.find(token) == -1 and containsAlpha(token):
+                #remove stop words, punctuation, numbers, and single character
+                if len(token) > 1 and token not in stopwords.words('english') and string.punctuation.find(token) == -1 and containsAlpha(token):
                     pos = getWordNetPos(taggedToken[1])
                     if pos is not None: tokens.append(lmtzr.lemmatize(token, pos))
         
@@ -149,8 +150,9 @@ def processFile(filename, outfile):
     fileContent = firstLine + preTag + fileContent + posTag
     
     soup = BeautifulSoup(fileContent, "xml") #must explicitly 
-    entries = soup.find_all("REUTERS")  #capital sensitive
-
+    
+    entries = soup.find_all("REUTERS", limit = int(procDocCnt))  #capital sensitive
+    
     infile.close()
     for entry in entries:
         text = entry.find("TEXT")
@@ -179,13 +181,15 @@ def processFile(filename, outfile):
         outputVec(outfile, doc.getFreqVec(), docInfo)
     
 if __name__ == "__main__":
-    dirPrefix= "Data/"
-    #dirPrefix = '/home/0/srini/WWW/674/public/reuters/'
+    dirPrefix = '/home/0/srini/WWW/674/public/reuters/'
     #downloads the necessary packages
     nltk.download("maxent_treebank_pos_tagger")
     nltk.download("stopwords")
     nltk.download("punkt")
     nltk.download("wordnet")
+    
+    if len(sys.argv) == 2 and sys.argv[1].isdigit():
+        procDocCnt = sys.argv[1]
     
     feaVecFile = open("freqVectors.txt", "w") 
     print "Computing Frequency vector..."
