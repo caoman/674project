@@ -13,11 +13,12 @@
 \begin{document}
 
 \title{CSE5243 Assignment 1}
-\author{Man Cao, Lilong Jiang}
+\author{Man Cao(cao.235), Lilong Jiang(jiang.573)}
 \maketitle
 
 \section{Work Separation}
-Lilong mainly worked on using the NLTK toolkit to compute the feature vector.
+Lilong mainly worked on using the NLTK toolkit to compute the term--frequency
+vector.
 Man mainly worked on computing the tf--idf vector. In fact there were a lot of
 overlapping during the work, we exchanged various ideas and wrote the this
 report together.
@@ -38,12 +39,12 @@ NLTK(\url{http://nltk.org/}) is used to determine the vocabulary of terms in the
 TITLE and BODY contents.
 
 \subsection{Tokenization}
-We tokenize the text into sentences. For every sentence, we chopped it up into
-tokens at the same time.
+We first tokenize the text into sentences. For every sentence, we then
+chop it up into tokens.
 
 \subsection{POS Tagging}
-We tag each token and only keep tokens which are nouns, verbs, adjectives or
-adverbs.
+We tag each token in a sentence with part-of-speech information, and only keep
+tokens which are nouns, verbs, adjectives or adverbs.
 Since the POS tags in the treebank are different from the tags in the WordNet,
 we map the POS tags in the treebank to the tags in the WordNet when we perform
 the lemmatization.
@@ -60,27 +61,19 @@ in lowercase for the lemmatizer to work properly.
 For the tokens which are synonyms, we replace them with the same token. We use
 the SYNSET function of WordNet to find the synonyms.
 
-\subsection{Stemming}
-We have tried two popular stemming algorithms inside NLTK: Porter Stemmer and
-Snowball English Stemmer. However, the generated result is not as good as just
-using the WordNet Lemmatizer with POS tags. For example, the word ``company'' is
-stemmed into ``compani'', and the word ``venture'' is stemmed into ``ventur''. We
-believe that a non-dictionary-based stemming algorithm does not provide
-sufficiently accurate result in general. As a result, we decide not to use any
-of those stemming algorithms at all.
 
 \section{Constructing the feature vectors}
 We construct two feature vectors: the term--frequency vector and tf--idf vector.
 We use the class labels as provided in the TOPICS tags of each article.
 \begin{itemize}
-  \item The term frequency vector \\
+  \item The term--frequency vector \\
   For every term(token) in the document, we calculate the number of times it
   occurs in a document. We don't store the tokens that occur only once in the
   document.
   \item The tf--idf vector \\
-  tf–-idf is the product of two statistics, term frequency and inverse document
+  tf–-idf is the product of two statistics, term--frequency and inverse document
   frequency.
-  Considering that sometime, the term frequency is so large that it has a
+  Considering that sometime, the term--frequency is so large that it has a
   dominant impact on the final value, we use the augmented frequency, which is
   shown below:
   \begin{equation}
@@ -105,7 +98,7 @@ NEWID:<value> TOPICS:<value1, value2, ...> PLACES:<value1, value2, ...>
 \end{verbatim}
 \noindent
 Note that each document corresponds to two lines: the first line contains the
-metadata of the documents, and the second line is the frequency/tf--idf vector.
+metadata of the document, the second line is the frequency/tf--idf vector.
 
 \section{Implementation Details}
 \begin{enumerate}
@@ -116,24 +109,32 @@ metadata of the documents, and the second line is the frequency/tf--idf vector.
 titleWeight = int(len(tokens) * 0.05 + 1)
 \end{equation}
 By ceiling the title weight, we can ensure the tokens exist even when the body
-text is empty while having little effect on other documents.
+text is empty while having little impact on other documents.
   \item  For the news without topics, we assign 'None' to the class label.
   \item  For the news with multiple topics, we assign multiple topics to the
   class label, each topic separated by a semicolon.
-  \item  In order to reduce the length of vector and avoid the unnecessary
-  computation, we only include the terms with high frequency in the vector. The
+  \item  In order to reduce the length of vector and avoid unnecessary
+  computation, we only include the terms with high frequency. The
   frequency threshold is 1.
-  \item Other issues not implemented yet:\\
-We don't consider the spelling correction.\\
-We don't extract the name entities which may be more important
-than regular tokens.
+  \item  We have tried two popular stemming algorithms inside NLTK: Porter
+  Stemmer and Snowball English Stemmer. However, the generated result is not as good as just
+using the WordNet Lemmatizer with POS tags. For example, the word ``company'' is
+stemmed into ``compani'', and the word ``venture'' is stemmed into ``ventur''. We
+believe that a non-dictionary-based stemming algorithm does not provide
+sufficiently accurate result in general. As a result, we decide not to use any
+of those stemming algorithms at all.
+
 \end{enumerate}
 
 \section{Future Work}
-Currently our preprocessor provides good(accurate) result, but it runs quite
+Currently our preprocessor provides good result, but it runs quite
 slow. It usually takes 1-5 seconds to process a single article, depending on
 its length. More optimization could be done to improve the performance. An
 obvious optimization is to support multithreading.
+
+Other possible improvements on refining the extracted terms include spelling
+correction, detecting named entities (which may be more important than regular
+tokens), and handling abbreviations.
 
 % \begin{figure}
 % \centering
