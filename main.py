@@ -39,10 +39,11 @@ def getSynonyms(word):
 class Doc:
     sentences = []
     
-    def __init__(self, id, topics, title, text):
+    def __init__(self, id, topics, title, places, text):
         self.id = id
         self.topics = topics
         self.title = title
+        self.places = places
         self.tokens = self.__tokenizeText(text)
         self.freqVec = None
         self.tfidfVec = None
@@ -157,8 +158,11 @@ def processFile(filename, outfile):
         
         titleText = bodyText = ""
         topics = ";".join([t.getText() for t in entry.TOPICS.find_all('D')])
-        if len(topics)==0:
+        if len(topics) == 0:
             topics = "None"
+        places = ";".join([p.getText() for p in entry.PLACES.find_all('D')])
+        if len(places) == 0:
+            places = "None"        
         title = text.TITLE
         if title is not None: titleText = title.getText()
         body = text.BODY      
@@ -167,14 +171,16 @@ def processFile(filename, outfile):
         id = entry.get("NEWID")
         print id
         #titleText is also considered as part of bodyText, in case the bodyText is empty.
-        doc = Doc(id, topics, titleText, titleText + "." + bodyText)
+        doc = Doc(id, topics, titleText, places, titleText + "." + bodyText)
         docList.append(doc)
         tokenList = tokenList.union(doc.tokens)
-        outputVec(outfile, doc.getFreqVec(), doc.id + " " + str(doc.topics))
+        
+        docInfo = "NEWID:" + doc.id + " TOPICS:" + doc.topics + " PLACES:" + doc.places
+        outputVec(outfile, doc.getFreqVec(), docInfo)
     
 if __name__ == "__main__":
-    #dirPrefix= "Data/"
-    dirPrefix = '/home/0/srini/WWW/674/public/reuters/'
+    dirPrefix= "Data/"
+    #dirPrefix = '/home/0/srini/WWW/674/public/reuters/'
     #downloads the necessary packages
     nltk.download("maxent_treebank_pos_tagger")
     nltk.download("stopwords")
@@ -192,7 +198,8 @@ if __name__ == "__main__":
     print "Computing TFIDF vector..."
     computeIDF()
     for doc in docList:
-        outputVec(tfidfFile, doc.getTFIDFVec(), doc.id + " " + str(doc.topics))
+        docInfo = "NEWID:" + doc.id + " TOPICS:" + doc.topics + " PLACES:" + doc.places
+        outputVec(tfidfFile, doc.getTFIDFVec(), docInfo)
     tfidfFile.close()
     print "TFIDF vector is done!"
     
