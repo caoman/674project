@@ -151,7 +151,8 @@ def processFile(filename, outfile):
     
     soup = BeautifulSoup(fileContent, "xml") #must explicitly 
     
-    entries = soup.find_all("REUTERS", limit = int(procDocCnt))  #capital sensitive
+    #entries = soup.find_all("REUTERS", limit = int(procDocCnt))  #capital sensitive
+    entries = soup.find_all("REUTERS")  #capital sensitive
     
     infile.close()
     for entry in entries:
@@ -181,6 +182,7 @@ def processFile(filename, outfile):
         outputVec(outfile, doc.getFreqVec(), docInfo)
     
 if __name__ == "__main__":
+    #dirPrefix = "Data/"
     dirPrefix = '/home/0/srini/WWW/674/public/reuters/'
     #downloads the necessary packages
     nltk.download("maxent_treebank_pos_tagger")
@@ -191,19 +193,35 @@ if __name__ == "__main__":
     if len(sys.argv) == 2 and sys.argv[1].isdigit():
         procDocCnt = sys.argv[1]
     
-    feaVecFile = open("freqVectors.txt", "w") 
-    print "Computing Frequency vector..."
+    feaVecFile = open("TrainFreqVectors.txt", "w") 
+    print "Computing Train Frequency vector..."
+    
+    fileNum = 0
     for file in os.listdir(dirPrefix):
+        fileNum += 1
         processFile(dirPrefix + file, feaVecFile)
+        
+        if fileNum > 15: 
+            feaVecFile.close()
+            print "Computing Test Frequency vector..."
+            feaVecFile = open("TestFreqVectors.txt", "w")
     feaVecFile.close()
     print "Frequency vector is done!"
 
-    tfidfFile = open("tfidfVectors.txt", "w")
-    print "Computing TFIDF vector..."
+    tfidfFile = open("TraintfidfVectors.txt", "w")
+    print "Computing Train TFIDF vector..."
     computeIDF()
+    fileNum = 0
     for doc in docList:
+        fileNum += 1
         docInfo = "NEWID:" + doc.id + " TOPICS:" + doc.topics + " PLACES:" + doc.places
         outputVec(tfidfFile, doc.getTFIDFVec(), docInfo)
+        
+        if fileNum > 15:
+            tfidfFile.close()
+            print "Computing Test TFIDF vector..."
+            tfidfFile = open("TesttfidfVectors.txt", "w")
+        
     tfidfFile.close()
     print "TFIDF vector is done!"
     
