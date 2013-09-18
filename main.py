@@ -193,35 +193,28 @@ if __name__ == "__main__":
     if len(sys.argv) == 2 and sys.argv[1].isdigit():
         procDocCnt = sys.argv[1]
     
-    feaVecFile = open("TrainFreqVectors.txt", "w") 
+    #feaVecFile = open("TrainFreqVectors.txt", "w") 
     print "Computing Train Frequency vector..."
-    
+    baseName = "freqVector"
     fileNum = 0
     for file in os.listdir(dirPrefix):
         fileNum += 1
+        feaVecFile = open(baseName + str(fileNum) + ".txt", "w")
         processFile(dirPrefix + file, feaVecFile)
-        
-        if fileNum > 15: 
-            feaVecFile.close()
-            print "Computing Test Frequency vector..."
-            feaVecFile = open("TestFreqVectors.txt", "w")
-    feaVecFile.close()
+        feaVecFile.close()
     print "Frequency vector is done!"
 
-    tfidfFile = open("TraintfidfVectors.txt", "w")
+    #tfidfFile = open("TraintfidfVectors.txt", "w")
     print "Computing Train TFIDF vector..."
     computeIDF()
+
+    baseName = "tfidfVector"
     fileNum = 0
+    tfidfFile = open(baseName + str(fileNum) + ".txt", "w")
     for doc in docList:
         fileNum += 1
         docInfo = "NEWID:" + doc.id + " TOPICS:" + doc.topics + " PLACES:" + doc.places
         outputVec(tfidfFile, doc.getTFIDFVec(), docInfo)
-        
-        if fileNum > 15:
-            tfidfFile.close()
-            print "Computing Test TFIDF vector..."
-            tfidfFile = open("TesttfidfVectors.txt", "w")
-        
     tfidfFile.close()
     print "TFIDF vector is done!"
     
