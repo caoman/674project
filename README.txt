@@ -16,13 +16,13 @@ How to run the program:
 
 where n is an optional numeric argument that limits the maximum number of documents to be processed in each input file.
 
-During runtime, it will print the 'NEWID' of the document processed, it will take a long time to finish processing all the files.
+During runtime, it will print the 'NEWID' of the document processed. It will take a long time to finish processing all the files.
 
 It is highly recommended for the grader to run the following command:
 
-	python main.py 10
+	python main.py 3
 
-which will only process the first 10 documents in each input file, and will quickly give an idea of our workflow.
+which will only process the first 3 documents in each input file, and will quickly give an idea of our workflow.
 
 ###################################################################
 Directory structure:
