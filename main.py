@@ -135,7 +135,7 @@ def computeIDF():
 
 #output vector
 def outputVec(outfile, vector, prefix):
-    vecStr = prefix + "\n{" + ",".join([key + ":" + str(val) for key, val in vector.iteritems()]) + "}\n"
+    vecStr = prefix + "\n{" + ",".join(["'" + key + "'" + ":" + str(val) for key, val in vector.iteritems()]) + "}\n"
     outfile.write(vecStr)
 
 #process each file
@@ -178,7 +178,8 @@ def processFile(filename, outfile):
         docList.append(doc)
         tokenList = tokenList.union(doc.tokens)
         
-        docInfo = "NEWID:" + doc.id + " TOPICS:" + doc.topics + " PLACES:" + doc.places
+        docInfo = "NEWID:" + doc.id + " TOPICS:" + doc.topics + " PLACES:" + doc.places 
+        #docInfo = "{'NEWID':" + doc.id + " ,'TOPICS':" + doc.topics + " ,'PLACES':" + doc.places + "}"
         outputVec(outfile, doc.getFreqVec(), docInfo)
     
 if __name__ == "__main__":
@@ -213,7 +214,7 @@ if __name__ == "__main__":
     tfidfFile = open(baseName + str(fileNum) + ".txt", "w")
     for doc in docList:
         fileNum += 1
-        docInfo = "NEWID:" + doc.id + " TOPICS:" + doc.topics + " PLACES:" + doc.places
+        docInfo = "NEWID:" + doc.id + " TOPICS:" + doc.topics + " PLACES:" + doc.places 
         outputVec(tfidfFile, doc.getTFIDFVec(), docInfo)
     tfidfFile.close()
     print "TFIDF vector is done!"
