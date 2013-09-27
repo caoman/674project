@@ -1,0 +1,49 @@
+%author: Man Cao, Lilong Jiang
+\documentclass{article}
+\usepackage[letterpaper]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+%\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{relsize}
+\usepackage{graphicx}
+
+\newcommand{\code}[1]{\textsf{\smaller\verb~#1~}}
+
+\begin{document}
+
+\title{CSE5243 Assignment 2}
+\author{Man Cao(cao.235), Lilong Jiang(jiang.573)}
+\maketitle
+
+\section{Work Separation}
+
+\section{Input}
+The input file only contains the documents with topics and has the following format:
+\begin{verbatim}
+{'NEWID':<value>, 'TOPICS':[value1, value2, ...], 'PLACES':[value1, value2, ...]}
+{<term1>:<value1>, <term1>:<value2>, ...}
+\end{verbatim}
+Note that each document corresponds to two lines: the first line contains the
+metadata of the document, the second line is the frequency vector.
+
+\section{Cross Validation}
+
+
+\section{Build classifier model}
+The topics in the news document is used to build the classes. In order to handle the documents with multiple topics, we use the documents with only one topic to build the initial classes. The documents with multiple topics are assigned to classes if the topic of the class is contained in the document. 
+
+\section{Test classifier model}
+We implemented two methods to classify the news documents: K-nearest neighbors and Naive Bayesian. 
+
+\subsection{K-nearest neighbors}
+The centroid of each class is represented by the feature vector in which the frequency of each token is averaged on the number of documents in the class. The tokens with low frequency will be eliminated after the average. For every documents, we comppute the cosin similarity between the documents and the classes. The document will be assigned to the class with the maximum similarity. If the document has no similarity with all the classes, the document will be assigned to one random class.
+
+\subsection{Naive Bayesian}
+
+\subsection{Matrics}
+
+
+\section{Future Work}
+\end{document}
+
