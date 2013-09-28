@@ -3,16 +3,16 @@ Created on Sep 18, 2013
 
 @author: lilong, man
 '''
-import re, os, math, random
-from collections import deque
+import re, os, math, random, heapq
 
-classDocList = []
-trainDocList = deque()
-testDocList = deque()
+docList = []
+trainDocList = []
+testDocList = []
 classDict = {}
 valFold = 5     #4:1 cross validation
 trainDocCnt = 0
 testDocCnt = 0
+
 
 class Doc:
     def __init__(self, topics, feaVec):
@@ -38,9 +38,25 @@ class topicClass:
         self.docCnt = len(self.docList)
         for token, val in self.centroidVec.iteritems():
             self.centroidVec[token] = float(val) / self.docCnt 
+#tested
+class Heap:
+    def __init__(self, maxSize):
+        self.heap = []
+        self.maxSize = maxSize
+    
+    def push(self, sim, topics):
+        curHeapSize = len(self.heap)
+        
+        if curHeapSize < self.maxSize:            
+            self.heap.append((-sim, topics))        #python just implemented the min-heap
+            if curHeapSize == self.maxSize - 1:
+                heapq.heapify(self.heap)
+        elif self.heap[0][0] < -sim:
+            heapq.heapreplace(self.heap, (-sim, topics))
+                 
 
 def readVectors(fileName):
-    global classDocList
+    global docList
     vecFile = open(fileName, 'r')
     
     while True:
@@ -49,18 +65,7 @@ def readVectors(fileName):
         metaVec = eval(metaData)
         vec = eval(vecFile.readline())    
         doc = Doc(metaVec['TOPICS'], vec)
-        classDocList.append(doc)
-
-def spliteDocs():
-    global classDocList
-    partSize = int(math.ceil(len(classDocList) / valFold))
-    
-    for i in range(valFold - 1):
-        trainDocList.append(classDocList[i * partSize: (i + 1) * partSize])
-    trainDocCnt = (valFold - 1) * partSize
-    
-    testDocList.append(classDocList[trainDocCnt:])
-    testDocCnt = len(classDocList) - trainDocCnt 
+        docList.append(doc)
     
 def calCosSim(vec1, vec2):
     numerator = 0
@@ -76,126 +81,137 @@ def calCosSim(vec1, vec2):
         
     return numerator / (math.sqrt(denominator1) * math.sqrt(denominator2)) 
 
-#firstly form the classes with the docs with only one topic
-#then assign the docs with multiple topics into the compatible classes    
-def classify():
-    printTrainTest()
-    #build the model
+#need to consider a good way to select K
+def selectK():
+    return 2
+
+def classifyWithKNN():
+    global trainDocList
+    global testDocList
+    
+    K = selectK()
+    
+    relCnt = 0
+    for testDoc in testDocList:
+        heap = Heap(K)
+        for trainDoc in trainDocList:
+            sim = calCosSim(testDoc.feaVec, trainDoc.feaVec)
+            heap.push(sim, trainDoc.topics)
+        
+        topicsList = []
+        topicDict = {}
+        
+        for tuple in heap.heap:
+            topic = tuple[1]
+            if len(topic) > 1:
+                topicsList.append(topic)
+                continue
+            topic = topic[0]
+            if topicDict.has_key(topic):
+                topicDict[topic] += 1
+            else:
+                topicDict[topic] = 1
+        for topics in topicsList:
+            for topic in topicDict.values():
+                if topic in topics:
+                    topicDict[topic] += 1
+        docTopic = ""                       #the topic with the maximum freq in the neighbors
+        freq = 0
+        for topic, val in topicDict.items():
+            if val > freq:
+                freq = val
+                docTopic = topic
+        if docTopic in testDoc.topics:
+            relCnt += 1
+    precision = float(relCnt) / len(testDocList)
+    print "KNN Precision:" + str(precision)
+      
+def classifyWithBayes():
     global trainDocList
     global classDict
     
     mulTopicsDocList = []
     
-    for docGroup in trainDocList:
-        for doc in docGroup:
-            if len(doc.topics) > 1: 
-                mulTopicsDocList.append(doc)
-                continue
-            docTopic = doc.topics[0]
-            if classDict.has_key(docTopic):
-                classDict[docTopic].addDoc(doc)
-            else:
-                topicClass = topicClass(doc)
-                classDict[docTopic] = topicClass
+    for doc in trainDocList:
+        if len(doc.topics) > 1: 
+            mulTopicsDocList.append(doc)
+            continue
+        docTopic = doc.topics[0]
+        if classDict.has_key(docTopic):
+            classDict[docTopic].addDoc(doc)
+        else:
+            topicClass = topicClass(doc)
+            classDict[docTopic] = topicClass
         
     for doc in mulTopicsDocList:
         for classTopic, knnClass in classDict.iteritems():
             if classTopic in doc.topics:
                 knnClass.addDoc(doc)
-    
-    #classifyWithKNN
-    for topicClass in classDict.itervalues():
-        topicClass.setCentroid()
-    
-    '''for topicClass, knnClass in classDict.iteritems():
-        print topicClass
-        print knnClass.centroidVec'''
-    relCnt = 0              #record the correct classified docs
-    
-    for docGroup in testDocList:
-        for doc in docGroup:
-            sim = 0
-            docClass = None
-            
-            for knnClass in classDict.itervalues():
-                topicVec = knnClass.centroidVec
-                tmpSim = calCosSim(doc.feaVec, topicVec)
-                print knnClass.topic + " " + str(tmpSim)
-                if tmpSim > sim:
-                    sim = tmpSim
-                    docClass = knnClass.topic
-            
-            #if the cosin similarity between the doc and all the classes is 0, then we assign the doc to one certain class randomly
-            if docClass is None: docClass = random.choice(classDict.keys())
-            if docClass in doc.topics:
-                relCnt += 1
-            
-            print docClass + " " + str(doc.topics)
-            
-    precision = float(relCnt) / testDocCnt
-    print "KNN precision:" + str(precision)
-    
-    #classify with naive Bayes
     relCnt = 0
-    
-    for docGroup in testDocList:
-        for doc in docGroup:
-            docClass = None
-            prob = 0
-            for topicClass in classDict.itervalues():
-                priorProb = float(topicClass.docCnt) / trainDocCnt
-                itemsProb = 1
-                for token in doc.feaVec.keys():
-                    itemOcc = 0
-                    for classDoc in topicClass.docList:
-                        if classDoc.feaVec.has_key(token):
-                            itemOcc += 1
-                    itemsProb *= float(itemOcc) / topicClass.docCnt
-                tmpProb = itemsProb * priorProb
-                if tmpProb > prob:
-                    prob = tmpProb
-                    docClass = topicClass.topic
-            
-            if docClass in doc.topics:
-                relCnt += 1
+    for doc in testDocList:
+        docClass = None
+        prob = 0
+        for topicClass in classDict.itervalues():
+            priorProb = float(topicClass.docCnt) / trainDocCnt
+            itemsProb = 1
+            for token in doc.feaVec.keys():
+                itemOcc = 0
+                for classDoc in topicClass.docList:
+                    if classDoc.feaVec.has_key(token):
+                        itemOcc += 1
+                itemsProb *= float(itemOcc) / topicClass.docCnt
+            tmpProb = itemsProb * priorProb
+            if tmpProb > prob:
+                prob = tmpProb
+                docClass = topicClass.topic
+        
+        if docClass in doc.topics:
+            relCnt += 1
     
     precision = float(relCnt) / testDocCnt
-    print "Bayes precision:" + precision   
+    print "Bayes precision:" + precision  
 
 def crossValidate():
+    global testDocList
+    global trainDocList
+    
+    docSize = len(docList)
+    partSize = int(docSize / float(valFold) + 0.5)
+
     for i in range(valFold):
-        #printTrainTest()
-        classify()
+        startIndex = i * partSize
+        endIndex = (i + 1) * partSize 
         
-        trainDocList.append(testDocList.popleft())
-        testDocList.append(trainDocList.popleft())
-        break
+        if endIndex < docSize:
+            testDocList = docList[startIndex: endIndex]
+            trainDocList = docList[0: i * partSize] + docList[(i + 1) * partSize:]
+        else:
+            endIndex %= docSize
+            testDocList = docList[startIndex:] + docList[0: endIndex]
+            trainDocList = docList[endIndex: startIndex]
+            
+        printTrainTest()
+        classifyWithKNN()
+        #classifyWithBayes()       
+        #break
         
         
 def printTrainTest():
     global trainDocList
     global testDocList
     print "--------------------------------"
-    print "trainDocList"
-    for trainDocs in trainDocList:
-        print "one group"
-        for doc in trainDocs:
-            print doc.topics 
-            print doc.feaVec
-    print "testDocList"
-    for testDocs in testDocList:
-        print "one group"
-        for doc in testDocs:
-            print doc.topics 
-            print doc.feaVec
+    print "trainDocList:" + str(len(trainDocList))
+    for doc in trainDocList:
+        print doc.topics 
+        print doc.feaVec
+    print "testDocList:" + str(len(testDocList))
+    for doc in testDocList:
+        print doc.topics 
+        print doc.feaVec
   
 if __name__ == '__main__':
     readVectors("FreqVectors.txt")
-    spliteDocs()
-    crossValidate()
-    '''for doc in classDocList:
-        print doc.topics
-        print doc.feaVec'''   
+    crossValidate() 
     
     
     
