@@ -78,12 +78,14 @@ def calCosSim(vec1, vec2):
     
     for val in vec2.itervalues():
         denominator2 += val * val
-        
+    
+    if denominator1 == 0 or denominator2 == 0: return 0    
     return numerator / (math.sqrt(denominator1) * math.sqrt(denominator2)) 
 
 #need to consider a good way to select K
 def selectK():
-    return 2
+    global trainDocList
+    return int(math.sqrt(len(trainDocList)))
 
 def classifyWithKNN():
     global trainDocList
@@ -92,38 +94,44 @@ def classifyWithKNN():
     K = selectK()
     
     relCnt = 0
+    testDocSize = len(testDocList)
+    
     for testDoc in testDocList:
         heap = Heap(K)
         for trainDoc in trainDocList:
             sim = calCosSim(testDoc.feaVec, trainDoc.feaVec)
             heap.push(sim, trainDoc.topics)
         
-        topicsList = []
+        mulTopicsList = []
         topicDict = {}
         
         for tuple in heap.heap:
             topic = tuple[1]
             if len(topic) > 1:
-                topicsList.append(topic)
+                mulTopicsList.append(topic)
                 continue
             topic = topic[0]
             if topicDict.has_key(topic):
                 topicDict[topic] += 1
             else:
                 topicDict[topic] = 1
-        for topics in topicsList:
+                
+        #calculate the frequency for each topic in the neighbours
+        for topics in mulTopicsList:
             for topic in topicDict.values():
                 if topic in topics:
                     topicDict[topic] += 1
+                    
         docTopic = ""                       #the topic with the maximum freq in the neighbors
         freq = 0
         for topic, val in topicDict.items():
             if val > freq:
                 freq = val
                 docTopic = topic
+                
         if docTopic in testDoc.topics:
             relCnt += 1
-    precision = float(relCnt) / len(testDocList)
+    precision = float(relCnt) / testDocSize
     print "KNN Precision:" + str(precision)
       
 def classifyWithBayes():
@@ -190,7 +198,7 @@ def crossValidate():
             testDocList = docList[startIndex:] + docList[0: endIndex]
             trainDocList = docList[endIndex: startIndex]
             
-        printTrainTest()
+        #printTrainTest()
         classifyWithKNN()
         #classifyWithBayes()       
         #break
