@@ -12,8 +12,11 @@ testDocList = []
 classDict = {}
 valFold = 5     #4:1 cross validation
 numTopics = 2   #Number of topics per doc predicted by classification algorithm. If it's 1, the effect is equivalent to the old code.
-trainDocCnt = 0
-testDocCnt = 0
+#bayesM = 3      # parameters of "m-estimate" for naive Bayes. Set bayesM to zero to disable m-estimate.
+bayesM = 0
+bayesP = 0.333
+#trainDocCnt = 0
+#testDocCnt = 0
 
 
 class Doc:
@@ -21,13 +24,13 @@ class Doc:
         self.topics = topics
         self.feaVec = feaVec
 
-class topicClass:
+class TopicClass:
     def __init__(self, doc):
         self.centroidVec = {}
         self.docList = []
         self.topic = doc.topics[0]
         self.addDoc(doc)   
-        self.docCnt = 0
+        #self.docCnt = 0
     
     def addDoc(self, doc):
         self.docList.append(doc)
@@ -94,6 +97,8 @@ def isRelated(doc, topicDict):
     for i in range(numTopics):
         if i < len(sortedTopicDict): 
             topic = sortedTopicDict[i][0]
+            #print "predicted topic: " + topic
+            #print "actual topics(s): " + str(doc.topics)
             if topic in doc.topics:
                 return True
     return False
@@ -156,7 +161,7 @@ def classifyWithKNN():
     print "KNN Precision:" + str(precision)
       
 def classifyWithBayes():
-    global trainDocList
+    global trainDocList, testDocList
     global classDict
     
     mulTopicsDocList = []
@@ -169,36 +174,40 @@ def classifyWithBayes():
         if classDict.has_key(docTopic):
             classDict[docTopic].addDoc(doc)
         else:
-            topicClass = topicClass(doc)
-            classDict[docTopic] = topicClass
+            classDict[docTopic] = TopicClass(doc)
         
     for doc in mulTopicsDocList:
         for classTopic, knnClass in classDict.iteritems():
             if classTopic in doc.topics:
                 knnClass.addDoc(doc)
+    
+    topicDict = {}
     relCnt = 0
     for doc in testDocList:
-        docClass = None
-        prob = 0
+        #docClass = None
+        #prob = 0
         for topicClass in classDict.itervalues():
-            priorProb = float(topicClass.docCnt) / trainDocCnt
+            priorProb = float(len(topicClass.docList)) / len(trainDocList)
             itemsProb = 1
             for token in doc.feaVec.keys():
-                itemOcc = 0
+                itemOcc = 0 + bayesM * bayesP
                 for classDoc in topicClass.docList:
                     if classDoc.feaVec.has_key(token):
                         itemOcc += 1
-                itemsProb *= float(itemOcc) / topicClass.docCnt
+                itemsProb *= float(itemOcc) / (len(topicClass.docList) + bayesM)
             tmpProb = itemsProb * priorProb
+            topicDict[topicClass.topic] = tmpProb
+            '''
             if tmpProb > prob:
                 prob = tmpProb
                 docClass = topicClass.topic
-        
-        if docClass in doc.topics:
+            '''
+        #if docClass in doc.topics:
+        if isRelated(doc, topicDict):
             relCnt += 1
     
-    precision = float(relCnt) / testDocCnt
-    print "Bayes precision:" + precision  
+    precision = float(relCnt) / len(testDocList)
+    print "Bayes precision:" + str(precision)
 
 def crossValidate():
     global testDocList
@@ -220,8 +229,8 @@ def crossValidate():
             trainDocList = docList[endIndex: startIndex]
             
         #printTrainTest()
-        classifyWithKNN()
-        #classifyWithBayes()
+        #classifyWithKNN()
+        classifyWithBayes()
         #break
         
         
