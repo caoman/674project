@@ -191,8 +191,8 @@ def processFile(filename, outfile):
         outputVec(outfile, doc.getFreqVec(), docInfo)
     
 if __name__ == "__main__":
-    dirPrefix = "Data/"
-    #dirPrefix = '/home/0/srini/WWW/674/public/reuters/'
+    #dirPrefix = "Data/"
+    dirPrefix = '/home/0/srini/WWW/674/public/reuters/'
     #downloads the necessary packages
     nltk.download("maxent_treebank_pos_tagger")
     nltk.download("stopwords")

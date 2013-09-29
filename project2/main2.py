@@ -1,15 +1,17 @@
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 '''
 Created on Sep 18, 2013
 
 @author: lilong, man
 '''
-import re, os, math, random, heapq
+import re, os, math, random, heapq, operator
 
 docList = []
 trainDocList = []
 testDocList = []
 classDict = {}
 valFold = 5     #4:1 cross validation
+numTopics = 2   #Number of topics per doc predicted by classification algorithm. If it's 1, the effect is equivalent to the old code.
 trainDocCnt = 0
 testDocCnt = 0
 
@@ -39,6 +41,8 @@ class topicClass:
         for token, val in self.centroidVec.iteritems():
             self.centroidVec[token] = float(val) / self.docCnt 
 #tested
+#The heap records the top-K docs in the training set with largest similarities with the current test doc
+#It is a min-heap
 class Heap:
     def __init__(self, maxSize):
         self.heap = []
@@ -48,11 +52,11 @@ class Heap:
         curHeapSize = len(self.heap)
         
         if curHeapSize < self.maxSize:            
-            self.heap.append((-sim, topics))        #python just implemented the min-heap
+            self.heap.append((sim, topics))        #python just implemented the min-heap
             if curHeapSize == self.maxSize - 1:
                 heapq.heapify(self.heap)
-        elif self.heap[0][0] < -sim:
-            heapq.heapreplace(self.heap, (-sim, topics))
+        elif self.heap[0][0] < sim:
+            heapq.heapreplace(self.heap, (sim, topics))
                  
 
 def readVectors(fileName):
@@ -67,7 +71,7 @@ def readVectors(fileName):
         doc = Doc(metaVec['TOPICS'], vec)
         docList.append(doc)
     
-def calCosSim(vec1, vec2):
+def calCosSim(vec1, vec2):          # the larger, the more similar
     numerator = 0
     denominator1 = denominator2 = 0
     
@@ -81,6 +85,18 @@ def calCosSim(vec1, vec2):
     
     if denominator1 == 0 or denominator2 == 0: return 0    
     return numerator / (math.sqrt(denominator1) * math.sqrt(denominator2)) 
+
+def isRelated(doc, topicDict):
+    global numTopics
+
+    #sort the topics in descending order according to the values
+    sortedTopicDict = sorted(topicDict.iteritems(), key=operator.itemgetter(1), reverse=True)
+    for i in range(numTopics):
+        if i < len(sortedTopicDict): 
+            topic = sortedTopicDict[i][0]
+            if topic in doc.topics:
+                return True
+    return False
 
 #need to consider a good way to select K
 def selectK():
@@ -118,18 +134,23 @@ def classifyWithKNN():
                 
         #calculate the frequency for each topic in the neighbours
         for topics in mulTopicsList:
-            for topic in topicDict.values():
+            for topic in topicDict.keys():
                 if topic in topics:
+                    #print "#####################reached"
                     topicDict[topic] += 1
                     
+        '''
         docTopic = ""                       #the topic with the maximum freq in the neighbors
         freq = 0
+        #print "distinct topics: " + str(len(topicDict))
         for topic, val in topicDict.items():
             if val > freq:
                 freq = val
                 docTopic = topic
-                
         if docTopic in testDoc.topics:
+            relCnt += 1
+        '''
+        if isRelated(testDoc, topicDict):
             relCnt += 1
     precision = float(relCnt) / testDocSize
     print "KNN Precision:" + str(precision)
@@ -200,7 +221,7 @@ def crossValidate():
             
         #printTrainTest()
         classifyWithKNN()
-        #classifyWithBayes()       
+        #classifyWithBayes()
         #break
         
         
