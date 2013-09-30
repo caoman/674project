@@ -15,8 +15,6 @@ numTopics = 2   #Number of topics per doc predicted by classification algorithm.
 #bayesM = 3      # parameters of "m-estimate" for naive Bayes. Set bayesM to zero to disable m-estimate.
 bayesM = 0
 bayesP = 0.333
-#trainDocCnt = 0
-#testDocCnt = 0
 
 
 class Doc:
@@ -26,23 +24,13 @@ class Doc:
 
 class TopicClass:
     def __init__(self, doc):
-        self.centroidVec = {}
         self.docList = []
         self.topic = doc.topics[0]
         self.addDoc(doc)   
-        #self.docCnt = 0
     
     def addDoc(self, doc):
         self.docList.append(doc)
-        for token, val in doc.feaVec.iteritems():
-            if self.centroidVec.has_key(token):  self.centroidVec[token] += val
-            else: self.centroidVec[token] = val
 
-    #maybe need to delete the tokens with low freq
-    def setCentroid(self):
-        self.docCnt = len(self.docList)
-        for token, val in self.centroidVec.iteritems():
-            self.centroidVec[token] = float(val) / self.docCnt 
 #tested
 #The heap records the top-K docs in the training set with largest similarities with the current test doc
 #It is a min-heap
@@ -123,27 +111,15 @@ def classifyWithKNN():
             sim = calCosSim(testDoc.feaVec, trainDoc.feaVec)
             heap.push(sim, trainDoc.topics)
         
-        mulTopicsList = []
         topicDict = {}
         
         for tuple in heap.heap:
-            topic = tuple[1]
-            if len(topic) > 1:
-                mulTopicsList.append(topic)
-                continue
-            topic = topic[0]
-            if topicDict.has_key(topic):
-                topicDict[topic] += 1
-            else:
-                topicDict[topic] = 1
-                
-        #calculate the frequency for each topic in the neighbours
-        for topics in mulTopicsList:
-            for topic in topicDict.keys():
-                if topic in topics:
-                    #print "#####################reached"
+            for topic in tuple[1]:
+                if topicDict.has_key(topic):
                     topicDict[topic] += 1
-                    
+                else:
+                    topicDict[topic] = 1
+                
         '''
         docTopic = ""                       #the topic with the maximum freq in the neighbors
         freq = 0
@@ -165,27 +141,29 @@ def classifyWithBayes():
     global classDict
     
     mulTopicsDocList = []
+    classDict = {}
     
     for doc in trainDocList:
+        '''
         if len(doc.topics) > 1: 
             mulTopicsDocList.append(doc)
             continue
         docTopic = doc.topics[0]
-        if classDict.has_key(docTopic):
-            classDict[docTopic].addDoc(doc)
-        else:
-            classDict[docTopic] = TopicClass(doc)
-        
+        '''
+        for docTopic in doc.topics:
+            if classDict.has_key(docTopic):
+                classDict[docTopic].addDoc(doc)
+            else:
+                classDict[docTopic] = TopicClass(doc)
+    ''' 
     for doc in mulTopicsDocList:
-        for classTopic, knnClass in classDict.iteritems():
-            if classTopic in doc.topics:
-                knnClass.addDoc(doc)
-    
+        for topic, topicClass in classDict.iteritems():
+            if topic in doc.topics:
+                topicClass.addDoc(doc)
+    '''
     topicDict = {}
     relCnt = 0
     for doc in testDocList:
-        #docClass = None
-        #prob = 0
         for topicClass in classDict.itervalues():
             priorProb = float(len(topicClass.docList)) / len(trainDocList)
             itemsProb = 1
