@@ -23,13 +23,20 @@ class Doc:
         self.feaVec = feaVec
 
 class TopicClass:
-    def __init__(self, doc):
+    def __init__(self, doc, topic):
         self.docList = []
-        self.topic = doc.topics[0]
-        self.addDoc(doc)   
+        self.topic = topic
+        self.wordCnt = 0
+        self.vector = {}
+        self.addDoc(doc)
     
     def addDoc(self, doc):
         self.docList.append(doc)
+        for token, val in doc.feaVec.iteritems():
+            self.wordCnt += val
+            if self.vector.has_key(token): self.vector[token] += val
+            else: self.vector[token] = val
+
 
 #tested
 #The heap records the top-K docs in the training set with largest similarities with the current test doc
@@ -136,6 +143,7 @@ def classifyWithKNN():
     precision = float(relCnt) / testDocSize
     print "KNN Precision:" + str(precision)
       
+#Not consider the count of the words, prob(w | Ci) = countDocs(contains(w), Ci) / totalDocs(Ci)
 def classifyWithBayes():
     global trainDocList, testDocList
     global classDict
@@ -143,6 +151,7 @@ def classifyWithBayes():
     mulTopicsDocList = []
     classDict = {}
     
+    docCnt = 0
     for doc in trainDocList:
         '''
         if len(doc.topics) > 1: 
@@ -151,10 +160,11 @@ def classifyWithBayes():
         docTopic = doc.topics[0]
         '''
         for docTopic in doc.topics:
+            docCnt += 1     # Count the doc for multiple times, if it has multiple topics
             if classDict.has_key(docTopic):
                 classDict[docTopic].addDoc(doc)
             else:
-                classDict[docTopic] = TopicClass(doc)
+                classDict[docTopic] = TopicClass(doc, docTopic)
     ''' 
     for doc in mulTopicsDocList:
         for topic, topicClass in classDict.iteritems():
@@ -165,7 +175,7 @@ def classifyWithBayes():
     relCnt = 0
     for doc in testDocList:
         for topicClass in classDict.itervalues():
-            priorProb = float(len(topicClass.docList)) / len(trainDocList)
+            priorProb = float(len(topicClass.docList)) / docCnt
             itemsProb = 1
             for token in doc.feaVec.keys():
                 itemOcc = 0 + bayesM * bayesP
@@ -181,6 +191,43 @@ def classifyWithBayes():
                 docClass = topicClass.topic
             '''
         #if docClass in doc.topics:
+        if isRelated(doc, topicDict):
+            relCnt += 1
+    
+    precision = float(relCnt) / len(testDocList)
+    print "Bayes precision:" + str(precision)
+
+# Consider the count of each word, prob(w | Ci) = count(w in Ci) / totalWords(Ci)
+def classifyWithBayes2():
+    global trainDocList, testDocList
+    global classDict
+    
+    classDict = {}
+    
+    docCnt = 0
+    for doc in trainDocList:
+        for docTopic in doc.topics:
+            docCnt += 1
+            if classDict.has_key(docTopic):
+                classDict[docTopic].addDoc(doc)
+            else:
+                classDict[docTopic] = TopicClass(doc, docTopic)
+    
+    #print len(classDict)
+
+    topicDict = {}
+    relCnt = 0
+    for doc in testDocList:
+        for topicClass in classDict.itervalues():
+            classProb = float(len(topicClass.docList)) / docCnt
+            itemsProb = 1
+            for token in doc.feaVec.keys():
+                itemOcc = 0 + bayesM * bayesP
+                if topicClass.vector.has_key(token):
+                     itemOcc += topicClass.vector[token]
+                itemsProb *= float(itemOcc) / (topicClass.wordCnt + bayesM)
+            tmpProb = itemsProb * classProb
+            topicDict[topicClass.topic] = tmpProb
         if isRelated(doc, topicDict):
             relCnt += 1
     
@@ -208,7 +255,8 @@ def crossValidate():
             
         #printTrainTest()
         #classifyWithKNN()
-        classifyWithBayes()
+        #classifyWithBayes()
+        classifyWithBayes2()
         #break
         
         
