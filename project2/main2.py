@@ -6,28 +6,23 @@ Created on Sep 18, 2013
 '''
 import re, os, math, random, heapq, operator, time
 
-docList = []
+docList = []        #including training dataset and test dataset
 trainDocList = []
 testDocList = []
-valFold = 5     #4:1 cross validation
-numTopics = 2   #Number of topics per doc predicted by classification algorithm. If it's 1, the effect is equivalent to the old code.
-allWords = set()
-
+valFold = 5         #4:1 cross validation
+numTopics = 2       #Number of topics per doc predicted by classification algorithm. 
 
 class Doc:
     def __init__(self, topics, feaVec):
         self.topics = topics
         self.feaVec = feaVec
-        for w in feaVec.iterkeys():
-            allWords.add(w)
 
 class TopicClass:
     def __init__(self, doc, topic):
         self.docList = []
         self.topic = topic
-        self.wordCnt = 0
-        # mapping of word : docs that contain the word
-        self.wordDocVec = {}
+        self.wordCnt = 0    
+        self.wordDocVec = {}    # mapping of word : the number of docs that contain the word
         self.addDoc(doc)
     
     def addDoc(self, doc):
@@ -37,8 +32,6 @@ class TopicClass:
             if self.wordDocVec.has_key(token): self.wordDocVec[token] += 1
             else: self.wordDocVec[token] = 1
 
-
-#tested
 #The heap records the top-K docs in the training set with largest similarities with the current test doc
 #It is a min-heap
 class Heap:
@@ -50,13 +43,13 @@ class Heap:
         curHeapSize = len(self.heap)
         
         if curHeapSize < self.maxSize:            
-            self.heap.append((sim, topics))        #python just implemented the min-heap
+            self.heap.append((sim, topics))        
             if curHeapSize == self.maxSize - 1:
                 heapq.heapify(self.heap)
         elif self.heap[0][0] < sim:
             heapq.heapreplace(self.heap, (sim, topics))
                  
-
+#Read the input file and store the vectors in the memory
 def readVectors(fileName):
     global docList
     vecFile = open(fileName, 'r')
@@ -68,8 +61,9 @@ def readVectors(fileName):
         vec = eval(vecFile.readline())    
         doc = Doc(metaVec['TOPICS'], vec)
         docList.append(doc)
-    
-def calCosSim(vec1, vec2):          # the larger, the more similar
+
+# the larger, the more similar
+def calCosSim(vec1, vec2):         
     numerator = 0
     denominator1 = denominator2 = 0
     
@@ -107,11 +101,15 @@ def classifyWithKNN():
     global trainDocList
     global testDocList
     
+    startTime = time.time()
     K = selectK()
+    endTime = time.time()
+    print "KNN Training time:" + str(endTime - startTime)
     
     relCnt = 0
     testDocSize = len(testDocList)
     
+    startTime = time.time()
     for testDoc in testDocList:
         heap = Heap(K)
         for trainDoc in trainDocList:
@@ -129,6 +127,9 @@ def classifyWithKNN():
         
         if isRelated(testDoc, topicDict):
             relCnt += 1
+    endTime = time.time()
+    print "KNN Testing time for one document:" + str(float(endTime - startTime) / len(testDocList))
+    
     precision = float(relCnt) / testDocSize
     print "KNN Precision:" + str(precision)
       
@@ -168,7 +169,7 @@ def classifyWithBayes():
             for token in doc.feaVec.keys():
                 if wordDocFreq.has_key(token):
                     bayesP = float(wordDocFreq[token]) / len(trainDocList)
-                else:
+                else:   #the word doesn't occure in the training dataset
                     bayesP = 0.01 / len(trainDocList)
                 itemOcc = bayesM * bayesP
                 if topicClass.wordDocVec.has_key(token):
@@ -177,11 +178,10 @@ def classifyWithBayes():
             tmpProb = itemsProb * priorProb
             topicDict[topicClass.topic] = tmpProb
         if isRelated(doc, topicDict):
-            relCnt += 1
-    
+            relCnt += 1    
     endTime = time.time()
 
-    print "Bayes Testing time: " + str((endTime - startTime)/float(len(testDocList)))
+    print "Bayes Testing time for one document: " + str((endTime - startTime)/float(len(testDocList)))
     precision = float(relCnt) / len(testDocList)
     print "Bayes precision:" + str(precision)
 
@@ -242,7 +242,7 @@ def crossValidate():
             testDocList = docList[startIndex:] + docList[0: endIndex]
             trainDocList = docList[endIndex: startIndex]
             
-        #classifyWithKNN()
+        classifyWithKNN()
         classifyWithBayes()
         #classifyWithBayes2()
         
