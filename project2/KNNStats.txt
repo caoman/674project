@@ -1,0 +1,37 @@
+KNN: M = 1
+docList Length:11367
+Build the KNN model Time:1.59740447998e-05
+Test time for KNN:0.187532403004
+KNN Precision:0.80070391553
+Build the KNN model Time:2.09808349609e-05
+Test time for KNN:0.192749786629
+KNN Precision:0.802903651562
+Build the KNN model Time:1.59740447998e-05
+Test time for KNN:0.188094314163
+KNN Precision:0.818301803784
+Build the KNN model Time:2.00271606445e-05
+Test time for KNN:0.189037323418
+KNN Precision:0.759348878135
+Build the KNN model Time:2.09808349609e-05
+Test time for KNN:0.187745965319
+KNN Precision:0.802023757149
+AvgPrecision:0.796656401232
+KNN: M = 2
+docList Length:11367
+Build the KNN model Time:1.59740447998e-05
+Test time for KNN:0.186905111765
+KNN Precision:0.899692036956
+Build the KNN model Time:2.09808349609e-05
+Test time for KNN:0.188398667804
+KNN Precision:0.905411350638
+Build the KNN model Time:2.00271606445e-05
+Test time for KNN:0.186989152688
+KNN Precision:0.91597008359
+Build the KNN model Time:1.69277191162e-05
+Test time for KNN:0.181372021559
+KNN Precision:0.871095468544
+Build the KNN model Time:1.59740447998e-05
+Test time for KNN:0.181285723683
+KNN Precision:0.897052353718
+AvgPrecision:0.897844258689
+
