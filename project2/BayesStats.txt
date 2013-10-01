@@ -1,0 +1,33 @@
+M = 1
+Bayes Training time: 0.401908874512
+Bayes Testing time: 0.0062430263667
+Bayes precision:0.743950725913
+Bayes Training time: 0.390230178833
+Bayes Testing time: 0.00643321998939
+Bayes precision:0.743950725913
+Bayes Training time: 0.383760929108
+Bayes Testing time: 0.00626214170477
+Bayes precision:0.73955125385
+Bayes Training time: 0.382739782333
+Bayes Testing time: 0.00622177826797
+Bayes precision:0.69863616366
+Bayes Training time: 0.384879112244
+Bayes Testing time: 0.0061525187721
+Bayes precision:0.776506819182
+
+M = 2
+Bayes Training time: 0.559439897537
+Bayes Testing time: 0.00691409243186
+Bayes precision:0.825780906291
+Bayes Training time: 0.397130966187
+Bayes Testing time: 0.00667946809617
+Bayes precision:0.831500219974
+Bayes Training time: 0.457852840424
+Bayes Testing time: 0.00742718872393
+Bayes precision:0.821381434228
+Bayes Training time: 0.390428066254
+Bayes Testing time: 0.00680354729236
+Bayes precision:0.766388033436
+Bayes Training time: 0.378010034561
+Bayes Testing time: 0.00605250285997
+Bayes precision:0.837219533656
