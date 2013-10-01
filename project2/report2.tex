@@ -3,7 +3,7 @@
 \usepackage[letterpaper]{geometry}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
-%\usepackage{amsmath}
+\usepackage{amsmath}
 \usepackage{hyperref}
 \usepackage{relsize}
 \usepackage{graphicx}
@@ -17,9 +17,10 @@
 \maketitle
 
 \section{Work Separation}
-
+Lilong mainly worked on K-nearest neighbors classifier. Man mainly worked on naiver baysian classifier. In fact there were a lot of overlapping during the work, we exchanged various ideas and wrote the this report together.
 \section{Input}
-The input file only contains the documents with topics and has the following format:
+After eliminating the documents without topics, 11367 documents are left.\\ 
+The input file has the following format:
 \begin{verbatim}
 {'NEWID':<value>, 'TOPICS':[value1, value2, ...], 'PLACES':[value1, value2, ...]}
 {<term1>:<value1>, <term1>:<value2>, ...}
@@ -28,22 +29,45 @@ Note that each document corresponds to two lines: the first line contains the
 metadata of the document, the second line is the frequency vector.
 
 \section{Cross Validation}
-
-
-\section{Build classifier model}
-The topics in the news document is used to build the classes. In order to handle the documents with multiple topics, we use the documents with only one topic to build the initial classes. The documents with multiple topics are assigned to classes if the topic of the class is contained in the document. 
-
-\section{Test classifier model}
-We implemented two methods to classify the news documents: K-nearest neighbors and Naive Bayesian. 
-
+We perform a 5-fold cross validation. The final results are averaged on 5 rounds.
 \subsection{K-nearest neighbors}
-The centroid of each class is represented by the feature vector in which the frequency of each token is averaged on the number of documents in the class. The tokens with low frequency will be eliminated after the average. For every documents, we comppute the cosin similarity between the documents and the classes. The document will be assigned to the class with the maximum similarity. If the document has no similarity with all the classes, the document will be assigned to one random class.
-
+\subsubsection{Build the model}
+K is selected according to the following equation:
+\begin{align*}K = \sqrt[2]{D}\end{align*}
+where D is the number of documents in the training dataset.
+\subsubsection{Test the model}
+For every test document, we computes the cosine similarity between the test document and all the other documents. We set a parameter M to denote the top M classes with maximum number of documents in the top-K nearest neighbors, e.g. if M = 1, the document will be classified to the class with maximum frequency. If M = 2, the document will be classified to the class with maximum frequency and the class with the second maximum frequency.
+\subsubsection{Implementation Details}
+A min-heap is used to maintain the top-K nearest neighbors. Everytime a new similarity is computed, we will compare it with the minimum value in the min-heap, if the new similarity is greater than the minimum similarity in the heap, we will update the min-heap. By this way, we can achieve $Nlog K$ time complexity.
 \subsection{Naive Bayesian}
-
-\subsection{Matrics}
-
-
-\section{Future Work}
+\subsubsection{Build the model}
+The topics in the document is used to build the classes. The documents with multiple topics are assigned to classes if the topic of the class is contained in the topics of the document.  
+\subsubsection{Test the model}
+The probability of document D in class $C_i$ $P(C_i|D)$ is calculated as follows:
+\begin{align*}
+P(C_i|D) = \frac{P(D|C_i) \times P(C_i)}{P(D)}
+	 = \frac{P(W_1|C_i) \times P(W_2|C_i) \times ... \times P(W_n|C_i)}{P(D)}				
+\end{align*}
+where $C_i$ denotes the ith class, D denotes the test document, $P(C_i)$ is represented by the number of document in class $C_i$ over the number of document in the training dataset, $P(W_j|C_i)$ denotes the number of document containing word $W_j$ over the number of document in class $C_i$.
+\subsection{Implementation Details}
+\begin{itemize}
+\item M-estimate of Conditional Probability\\
+In order to handle the case that the training dataset do not cover all the words in the document, we use m-estimate approach to estimating the conditional probability, which is shown as the following:
+\begin{align*}
+P(W_j|C_i) = \frac{n_c + m \times p}{n + m}
+\end{align*}
+where $n_c$ is the number of documents from class $C_i$ that contain word $W_j$, n is the number of documents in $C_i$, m is the size of the training dataset, p is the prior probability of word $W_j$ which is calculated as the fraction of documents containing the word $W_j$ in the training dataset over the size of the training dataset. For the words which don't occure in the training dataset, we assume only one document in the training dataset contains the word.
+\end{itemize}
+\subsection{Result}
+Our program is run on the stdlinux.
+\subsubsection{Precision}
+Precision is the fraction of retrieved instances that are relevant.\\
+The average precision of 5-fold cross validation is 79.7\% for K nearest neighbors method with M = 1 while 89.8\% with M = 2.\\
+The average precision of 5-fold cross validation is 50\% for naive bayesian classifier. 
+\subsubsection{Training Time}
+For KNN, the training time mainly means the time for selecting K. It is negligible in our algorithm since K is computed as a root square of the number of documents in the training dataset.\\
+For naive baysian classifier, the time for build the classes from 9094 documents is s on average.
+\subsubsection{Test Time}
+We calculate the time for classifying one document. The time for KNN is 0.19s on average while 1s for naive bayesian classifier.
 \end{document}
 
