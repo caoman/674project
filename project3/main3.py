@@ -3,7 +3,7 @@ Created on Nov 3, 2013
 
 @author: lilong
 '''
-import math, heapq, copy
+import math
 
 docList = [] 
 clusterList = []
@@ -52,7 +52,7 @@ def hierachCluster():
                     proxMatrix[docIndex1][docIndex2 - docIndex1 - 1] = 1.1
                 else:
                     proxMatrix[docIndex2][docIndex1 - docIndex2 - 1] = 1.1
-        printProxMatrix()
+        #printProxMatrix()
         
         #assign the new mapping relationship between documents and clusters
         for index in range(len(docIndexCluster)):
@@ -73,13 +73,27 @@ def hierachCluster():
         
         clusterCnt = len(clusterList)
                 
-#n is the cluster number
-#def getClusters(n):
-#    clusters = []
-#    global clusterList
-#    curCluster = clusterList[0]
-#    i = 1
-#    while i < n:   
+#n is the number of cluster we want
+def getClusters(n):
+    global clusterList
+    
+    clusters = []
+    clusterCnt = 1
+    clusters.append(clusterList[0])
+    while clusterCnt < n:   
+        maxDis = -0.1
+        maxDisClusters = []
+        
+        for cluster in clusters:
+            if len(cluster.clusterList) > 0 and cluster.distance >= maxDis:
+                maxDis = cluster.distance
+                maxDisClusters.append(cluster)
+        
+        for maxCluster in maxDisClusters:
+            clusters += maxCluster.clusterList
+            clusters.remove(maxCluster)
+        clusterCnt = len(clusters)
+    return clusters
    
 # the larger, the more similar
 def calCosSim(vec1, vec2):    
@@ -137,23 +151,32 @@ def computeProxMatrix():
             
 def printProxMatrix():
     global proxMatrix
-    #print "rowCnt:" + str(len(proxMatrix))
     for row in proxMatrix:
+        rowStr = ""
         for cell in row:
-            print str(cell) + " "
-        print "\n" 
-    print "------"
+            rowStr += str(cell) + " "
+        print rowStr 
 
 def printCluster(cluster):
-    print "subCluserCnt:" + str(len(cluster.clusterList))
+    print "dis:" + str(cluster.distance)
     for subCluster in cluster.clusterList:
+        docStr = ""
         for doc in subCluster.docList:
-            print doc.newsID + " "
-        print "\n"
+            docStr += doc.newsID + " "
+        print docStr
     
 if __name__ == '__main__':
     readVectors("FreqVectors.txt")
     computeProxMatrix()
     printProxMatrix()
     hierachCluster()
+    clusterCnt = len(docList)
+    print "return the certain number of clusters"
+    for i in range(clusterCnt):
+        clusters = getClusters(i + 1)
+        print "clusters:"
+        for cluster in clusters:
+            print [doc.newsID for doc in cluster.docList]
+
+        
     
