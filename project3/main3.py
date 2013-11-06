@@ -72,7 +72,30 @@ def hierachCluster():
         printCluster(newCluster)
         
         clusterCnt = len(clusterList)
-                
+
+def calEntropy(clusters):
+    totalEntropy = 0
+    totalCnt = 0
+    
+    for cluster in clusters:
+        curEntropy = 0
+        topicDict = {}
+        docCnt = 0          #the doc with multiple topics is counted as multiple times
+        for doc in cluster.docList:
+            for topic in doc.topics:
+                docCnt += 1
+                if topicDict.has_key(topic):
+                    topicDict[topic] += 1
+                else:
+                    topicDict[topic] = 1
+        for topic, cnt in topicDict.items():
+            percent = float(cnt) / docCnt
+            curEntropy -= percent * math.log(percent, 2)
+        totalEntropy += curEntropy * docCnt
+        totalCnt += docCnt
+    totalEntropy /= totalCnt
+    return totalEntropy
+            
 #n is the number of cluster we want
 def getClusters(n):
     global clusterList
@@ -177,6 +200,7 @@ if __name__ == '__main__':
         print "clusters:"
         for cluster in clusters:
             print [doc.newsID for doc in cluster.docList]
+        print "entropy:" + str(calEntropy(clusters))
 
         
     
