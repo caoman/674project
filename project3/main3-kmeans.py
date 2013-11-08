@@ -8,6 +8,8 @@ import os, math, random
 from helperFunctions import *
 
 docList = []
+#numClusters = [2, 4, 8, 16, 32]
+numClusters = [32]
 
 class Doc:
     def __init__(self, newid, topics, feaVec):
@@ -27,15 +29,13 @@ class KmsCluster:
     #recompute centroid, and return the variation (distance) between the new centroid and old centroid
     def recomputeCentroid(self):
         newCentroid = {}
+        n = len(self.docList) * 1.0
         for doc in self.docList:
             for token,val in doc.feaVec.iteritems():
                 if newCentroid.has_key(token):
-                    newCentroid[token] += val
+                    newCentroid[token] += val/n
                 else:
-                    newCentroid[token] = val
-        n = len(self.docList) * 1.0
-        for token,val in newCentroid.iteritems():
-            newCentroid[token] = val/n
+                    newCentroid[token] = val/n
         distance = 1 - calCosSim(newCentroid, self.centroid)
         self.centroid = newCentroid
         return distance
@@ -62,8 +62,9 @@ def getInitClusters(K):
         centroidDocs.append(docList[n])
     return [KmsCluster(doc.feaVec) for doc in centroidDocs]
     
-def kmeans(K, threshold):
-    clusters = getInitClusters(K)
+# return the number of iterations executed
+def kmeans(K, threshold, clusters):
+    #clusters = getInitClusters(K)
     iter = 0
     while True:
         iter += 1
@@ -85,20 +86,28 @@ def kmeans(K, threshold):
                 maxVar = var
         if maxVar < threshold:
             break
-        if iter==1:
-            break
+        #if iter==1:
+            #break
         else:
             for c in clusters:
                 c.clear()
-    return clusters
+    #return clusters
+    return iter
 
 def printClusters(clusters):
     for cluster in clusters:
         #print cluster.centroid
         print len(cluster.docList)
         print "#####"
+    print "entropy:" + str(calEntropy(clusters))
+    print "skew:" + str(calSkew(clusters))
 
 if __name__ == '__main__':
-    readVectors("../FreqVectors-all.txt")
-    clusters = kmeans(4, 0.3)
-    printClusters(clusters)
+    readVectors("../FreqVectors.txt")
+    for K in numClusters:
+        clusters = getInitClusters(K)
+        iter = kmeans(K, 0.3, clusters)
+        print "iterations: " + str(iter)
+        printClusters(clusters)
+
+

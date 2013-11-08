@@ -26,6 +26,25 @@ def calCosSim(vec1, vec2):
     if denominator1 == 0 or denominator2 == 0: return 0    
     return numerator / (math.sqrt(denominator1) * math.sqrt(denominator2))
 
+def calJaccard(vec1, vec2):
+#    print vec1
+#    print vec2
+    numerator = 0
+    denominator = 0
+    
+    for token, val in vec1.iteritems():
+        denominator += val * val
+        if vec2.has_key(token):
+            numerator += val * vec2[token]
+#    print "denom1:" + str(denominator)
+    for val in vec2.itervalues():
+        denominator += val * val
+    
+    denominator -= numerator
+#    print "num:" + str(numerator) + " denominator:" + str(denominator)
+    if denominator == 0: return 0    
+    return (numerator * 1.0 / denominator)
+
 #calculate the variance the cardinalities of the clusters
 def calSkew(clusters):
     clusterCards = []
@@ -47,24 +66,27 @@ def calSkew(clusters):
 
 def calEntropy(clusters):
     totalEntropy = 0
-    totalCnt = 0
+    totalDocs = 0
     
     for cluster in clusters:
         curEntropy = 0
         topicDict = {}
-        docCnt = 0          #the doc with multiple topics is counted as multiple times
+        totalVotes = 0
+        totalDocs += len(cluster.docList)
         for doc in cluster.docList:
-            for topic in doc.topics: 
-                docCnt += 1
+            topicCnt = len(doc.topics)
+            for topic in doc.topics:  # for doc with multiple topics, each topic gets a "vote" of 1/topicCnt
+                totalVotes += 1.0/topicCnt
                 if topicDict.has_key(topic):
-                    topicDict[topic] += 1
+                    topicDict[topic] += 1.0/topicCnt
                 else:
-                    topicDict[topic] = 1
-        for topic, cnt in topicDict.items():
-            percent = float(cnt) / docCnt
-            curEntropy -= percent * math.log(percent, 2)
-        totalEntropy += curEntropy * docCnt
-        totalCnt += docCnt
-    totalEntropy /= totalCnt
+                    topicDict[topic] = 1.0/topicCnt
+        logBase = len(topicDict)
+        if logBase>=2:
+            for topic, vote in topicDict.iteritems():
+                percent = vote / totalVotes
+                curEntropy -= percent * math.log(percent, logBase)
+        totalEntropy += curEntropy * len(cluster.docList)
+    totalEntropy /= totalDocs
     return totalEntropy
 
