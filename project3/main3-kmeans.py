@@ -4,12 +4,16 @@ Created on Nov 3, 2013
 
 @author: man
 '''
-import os, math, random
+import os, math, random, time
 from helperFunctions import *
 
 docList = []
 #numClusters = [2, 4, 8, 16, 32]
-numClusters = [32]
+numClusters = [2, 4]
+#calSim = calCosSim
+calSim = calJaccard
+Verbose = False
+Threshold = 0.001
 
 class Doc:
     def __init__(self, newid, topics, feaVec):
@@ -36,7 +40,7 @@ class KmsCluster:
                     newCentroid[token] += val/n
                 else:
                     newCentroid[token] = val/n
-        distance = 1 - calCosSim(newCentroid, self.centroid)
+        distance = 1 - calSim(newCentroid, self.centroid)
         self.centroid = newCentroid
         return distance
 
@@ -72,7 +76,7 @@ def kmeans(K, threshold, clusters):
             sim = -1
             cluster = None
             for c in clusters:
-                newSim = calCosSim(doc.feaVec, c.centroid)
+                newSim = calSim(doc.feaVec, c.centroid)
                 if (newSim > sim):
                     sim = newSim
                     cluster = c
@@ -95,19 +99,27 @@ def kmeans(K, threshold, clusters):
     return iter
 
 def printClusters(clusters):
-    for cluster in clusters:
-        #print cluster.centroid
-        print len(cluster.docList)
-        print "#####"
-    print "entropy:" + str(calEntropy(clusters))
-    print "skew:" + str(calSkew(clusters))
+    if Verbose:
+        i = 0
+        for cluster in clusters:
+            #print cluster.centroid
+            print "cluster " + str(i) + ": " +str(len(cluster.docList))
+            i += 1
+    print "entropy: " + str(calEntropy(clusters))
+    print "skew: " + str(calSkew(clusters))
 
 if __name__ == '__main__':
     readVectors("../FreqVectors.txt")
+
     for K in numClusters:
+        startTime = time.time()
         clusters = getInitClusters(K)
-        iter = kmeans(K, 0.3, clusters)
+        iter = kmeans(K, Threshold, clusters)
+        elapse = time.time() - startTime
+        print "################"
+        print str(K) + " clusters:"
         print "iterations: " + str(iter)
+        print "time: " + str(elapse)
         printClusters(clusters)
 
 
