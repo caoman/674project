@@ -1,4 +1,4 @@
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4\
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 '''
 Created on Nov 3, 2013
 
@@ -41,8 +41,8 @@ def calSkew(clusters):
     avgCard = sumCard * 1.0 / len(clusters)
     
     for clusterCard in clusterCards:
-        sumCard += (clusterCard - avgCard) * (clusterCard - avgCard)
-    var = sumCard / clusterCnt
+        var += (clusterCard - avgCard) * (clusterCard - avgCard)
+    var = var / clusterCnt
     return var
 
 def calEntropy(clusters):
