@@ -1,17 +1,15 @@
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 '''
 Created on Nov 3, 2013
 
 @author: lilong
 '''
 import math
-from helperFunctions import *
 
 docList = [] 
 clusterList = []
 proxMatrix = []     #store the distance
 docIndexCluster = []    #record doc belongs to which cluster
-clusterCntList = [2, 4, 6, 8, 10]
+clusterCntList = [2, 4, 6, 7]
 
 class Cluster:
     def __init__(self):
@@ -75,7 +73,49 @@ def hierachCluster():
         printCluster(newCluster)
         
         clusterCnt = len(clusterList)
-     
+
+def calEntropy(clusters):
+    totalEntropy = 0
+    totalCnt = 0
+    
+    for cluster in clusters:
+        curEntropy = 0
+        topicDict = {}
+        docCnt = 0          #the doc with multiple topics is counted as multiple times
+        for doc in cluster.docList:
+            for topic in doc.topics: 
+                docCnt += 1
+                if topicDict.has_key(topic):
+                    topicDict[topic] += 1
+                else:
+                    topicDict[topic] = 1
+        for topic, cnt in topicDict.items():
+            percent = float(cnt) / docCnt
+            curEntropy -= percent * math.log(percent, 2)
+        totalEntropy += curEntropy * docCnt
+        totalCnt += docCnt
+    totalEntropy /= totalCnt
+    return totalEntropy
+
+#calculate the variance the cardinalities of the clusters
+def calSkew(clusters):
+    clusterCards = []
+    clusterCnt = len(clusters)
+    sumCard = 0
+    avgCard = 0
+    var = 0
+    
+    for cluster in clusters:
+        curCard = len(cluster.docList)
+        clusterCards.append(curCard)
+        sumCard += curCard
+    avgCard = sumCard * 1.0 / len(clusters)
+    
+    for clusterCard in clusterCards:
+        var += (clusterCard - avgCard) * (clusterCard - avgCard)
+    var = var / clusterCnt
+    return var    
+            
 #n is the number of cluster we want
 def getClusters(n):
     global clusterList
@@ -97,7 +137,46 @@ def getClusters(n):
             clusters.remove(maxCluster)
         clusterCnt = len(clusters)
     return clusters
-        
+   
+# the larger, the more similar
+def calCosSim(vec1, vec2):    
+#    print vec1
+#    print vec2
+         
+    numerator = 0
+    denominator1 = denominator2 = 0
+    
+    for token, val in vec1.iteritems():
+        denominator1 += val * val
+        if vec2.has_key(token):
+            numerator += val * vec2[token]
+    
+    for val in vec2.itervalues():
+        denominator2 += val * val
+    
+#    print "num:" + str(numerator) + " den1:" + str(denominator1) + " den2:" + str(denominator2)
+    if denominator1 == 0 or denominator2 == 0: return 0    
+    return numerator / (math.sqrt(denominator1) * math.sqrt(denominator2)) 
+
+def calJaccard(vec1, vec2):
+#    print vec1
+#    print vec2
+    numerator = 0
+    denominator = 0
+    
+    for token, val in vec1.iteritems():
+        denominator += val * val
+        if vec2.has_key(token):
+            numerator += val * vec2[token]
+#    print "denom1:" + str(denominator)
+    for val in vec2.itervalues():
+        denominator += val * val
+    
+    denominator -= numerator
+#    print "num:" + str(numerator) + " denominator:" + str(denominator)
+    if denominator == 0: return 0    
+    return (numerator * 1.0 / denominator)  
+           
 #Read the input file and store the vectors in the memory
 def readVectors(fileName):
     global docList
@@ -122,16 +201,27 @@ def readVectors(fileName):
         
         index += 1
 
-def computeProxMatrix():
+#measureFlag = 0: cosine, measureFlag = 1: Jaccard
+def computeProxMatrix(measureFlag):
     global proxMatrix
-
+    
     for index, doc in enumerate(docList[:-1]):
         proxMatrix.append([])
         afDocs = docList[index+1: ]
         for afDoc in afDocs:
-            cosVal = calCosSim(doc.feaVec, afDoc.feaVec)
-            proxMatrix[index].append(1 - cosVal)
-            
+            if measureFlag == 0:
+                proxVal = calCosSim(doc.feaVec, afDoc.feaVec)
+            else:
+                proxVal = calJaccard(doc.feaVec, afDoc.feaVec)
+            proxMatrix[index].append(1 - proxVal)
+
+def freeProxMatrix():
+    global proxMatrix
+    for row in proxMatrix:
+        del row
+    del proxMatrix
+    proxMatrix = []
+
 def printProxMatrix():
     global proxMatrix
     for row in proxMatrix:
@@ -150,17 +240,20 @@ def printCluster(cluster):
     
 if __name__ == '__main__':
     readVectors("FreqVectors.txt")
-    computeProxMatrix()
-    printProxMatrix()
-    hierachCluster()
-    print "return the certain number of clusters"
-    for clusterCnt in clusterCntList:
-        clusters = getClusters(clusterCnt)
-        print "clusters:"
-        for cluster in clusters:
-            print [doc.newsID for doc in cluster.docList]
-        print "entropy:" + str(calEntropy(clusters))
-        print "skew:" + str(cal)
+    
+    for measureFlag in [0, 1]:
+        computeProxMatrix(measureFlag)
+        printProxMatrix()
+        hierachCluster()
+        for clusterCnt in clusterCntList:
+            clusters = getClusters(clusterCnt)
+            print "clusters:"
+            for cluster in clusters:
+                print [doc.newsID for doc in cluster.docList]
+            print "entropy:" + str(calEntropy(clusters))
+            print "skew:" + str(calSkew(clusters))
+        print "---------------------------"
+        freeProxMatrix()
 
         
     
