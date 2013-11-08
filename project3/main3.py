@@ -9,7 +9,8 @@ docList = []
 clusterList = []
 proxMatrix = []     #store the distance
 docIndexCluster = []    #record doc belongs to which cluster
-    
+clusterCntList = [2, 4, 6, 8, 10]
+
 class Cluster:
     def __init__(self):
         self.distance = 0
@@ -82,7 +83,7 @@ def calEntropy(clusters):
         topicDict = {}
         docCnt = 0          #the doc with multiple topics is counted as multiple times
         for doc in cluster.docList:
-            for topic in doc.topics:
+            for topic in doc.topics: 
                 docCnt += 1
                 if topicDict.has_key(topic):
                     topicDict[topic] += 1
@@ -95,6 +96,25 @@ def calEntropy(clusters):
         totalCnt += docCnt
     totalEntropy /= totalCnt
     return totalEntropy
+
+#calculate the variance the cardinalities of the clusters
+def calSkew(clusters):
+    clusterCards = []
+    clusterCnt = len(clusters)
+    sumCard = 0
+    avgCard = 0
+    var = 0
+    
+    for cluster in clusters:
+        curCard = len(cluster.docList)
+        clusterCards.append(curCard)
+        sumCard += curCard
+    avgCard = sumCard * 1.0 / len(clusters)
+    
+    for clusterCard in clusterCards:
+        sumCard += (clusterCard - avgCard) * (clusterCard - avgCard)
+    var = sumCard / clusterCnt
+    return var    
             
 #n is the number of cluster we want
 def getClusters(n):
@@ -193,14 +213,14 @@ if __name__ == '__main__':
     computeProxMatrix()
     printProxMatrix()
     hierachCluster()
-    clusterCnt = len(docList)
     print "return the certain number of clusters"
-    for i in range(clusterCnt):
-        clusters = getClusters(i + 1)
+    for clusterCnt in clusterCntList:
+        clusters = getClusters(clusterCnt)
         print "clusters:"
         for cluster in clusters:
             print [doc.newsID for doc in cluster.docList]
         print "entropy:" + str(calEntropy(clusters))
+        print "skew:" + str(cal)
 
         
     
