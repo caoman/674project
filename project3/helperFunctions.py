@@ -62,31 +62,28 @@ def calSkew(clusters):
     for clusterCard in clusterCards:
         var += (clusterCard - avgCard) * (clusterCard - avgCard)
     var = var / clusterCnt
-    return var
+    return var 
 
 def calEntropy(clusters):
     totalEntropy = 0
-    totalDocs = 0
+    totalCnt = 0
     
     for cluster in clusters:
         curEntropy = 0
         topicDict = {}
-        totalVotes = 0
-        totalDocs += len(cluster.docList)
+        docCnt = 0          #the doc with multiple topics is counted as multiple times
         for doc in cluster.docList:
-            topicCnt = len(doc.topics)
-            for topic in doc.topics:  # for doc with multiple topics, each topic gets a "vote" of 1/topicCnt
-                totalVotes += 1.0/topicCnt
+            for topic in doc.topics: 
+                docCnt += 1
                 if topicDict.has_key(topic):
-                    topicDict[topic] += 1.0/topicCnt
+                    topicDict[topic] += 1
                 else:
-                    topicDict[topic] = 1.0/topicCnt
-        logBase = len(topicDict)
-        if logBase>=2:
-            for topic, vote in topicDict.iteritems():
-                percent = vote / totalVotes
-                curEntropy -= percent * math.log(percent, logBase)
-        totalEntropy += curEntropy * len(cluster.docList)
-    totalEntropy /= totalDocs
+                    topicDict[topic] = 1
+        for topic, cnt in topicDict.items():
+            percent = float(cnt) / docCnt
+            curEntropy -= percent * math.log(percent, 2)
+        totalEntropy += curEntropy * docCnt
+        totalCnt += docCnt
+    totalEntropy /= totalCnt
     return totalEntropy
 
