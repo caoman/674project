@@ -3,15 +3,13 @@ Created on Nov 3, 2013
 
 @author: lilong
 '''
-import math, time
+import time
 from helperFunctions import calSkew, calEntropy, calCosSim, calJaccard
 
 docList = [] 
-clusterList = []
-docIndexCluster = []    #record doc belongs to which cluster
-clusterCntList = [2, 4, 8, 16, 32, 64]
-proxList = []
-startIndex = 0      #describe the starting index for the min dis
+clusterCntList = [2, 3, 4, 5, 6, 7] #the clusters we want
+proxList = []       #the distance between different docs
+startIndex = 0      #describe the start searching index for the min dis in proxList
 
 class Cluster:
     def __init__(self):
@@ -30,31 +28,18 @@ def hierachCluster():
     global proxList
     global startIndex
     
-    clusterCnt = len(clusterList)
+    clusterCnt = len(docList)
     while clusterCnt > 1:
-        docIndex1 = 0
-        docIndex2 = 0
         minDis = 1.1
         
         subList = proxList[startIndex:]
         for tuple in subList:
-            docIndex1 = tuple[0]
-            docIndex2 = tuple[1]
-            if docIndexCluster[docIndex1] != docIndexCluster[docIndex2]:
+            cluster1 = docList[tuple[0]].cluster
+            cluster2 = docList[tuple[1]].cluster 
+            if cluster1 != cluster2:
                 minDis = tuple[2]
                 break
             startIndex += 1
-        #print "docIndex1:" + str(docIndex1) + " docIndex2:" + str(docIndex2)
-        #update matrix set
-        cluster1 = clusterList[docIndexCluster[docIndex1]]
-        cluster2 = clusterList[docIndexCluster[docIndex2]]
-        
-        #assign the new mapping relationship between documents and clusters
-        for index in range(len(docIndexCluster)):
-            if docIndexCluster[index] > docIndexCluster[docIndex2]:
-                docIndexCluster[index] -= 1
-        for doc in cluster2.docList:
-            docIndexCluster[doc.index] = docIndexCluster[docIndex1]
         
         #combine clusters
         newCluster = Cluster()
@@ -62,20 +47,19 @@ def hierachCluster():
         newCluster.docList = cluster1.docList + cluster2.docList
         newCluster.clusterList.append(cluster1)
         newCluster.clusterList.append(cluster2)
-        clusterList.remove(cluster2)
-        clusterList[docIndexCluster[docIndex1]] = newCluster
-        print "clusterCnt:" + str(clusterCnt)
-        #printCluster(newCluster)
         
-        clusterCnt = len(clusterList)
+        for doc in cluster1.docList:
+            doc.cluster = newCluster
+        for doc in cluster2.docList:
+            doc.cluster = newCluster
+        clusterCnt -= 1
+        print "clusterCnt:" + str(clusterCnt)
 
 #n is the number of cluster we want
-def getClusters(n):
-    global clusterList
-    
+def getClusters(n):    
     clusters = []
     clusterCnt = 1
-    clusters.append(clusterList[0])
+    clusters.append(docList[0].cluster)
     while clusterCnt < n:   
         maxDis = -0.1
         maxDisClusters = []
@@ -95,7 +79,6 @@ def getClusters(n):
 #Read the input file and store the vectors in the memory
 def readVectors(fileName):
     global docList
-    global clusterList
     vecFile = open(fileName, 'r')
     index = 0
     
@@ -109,9 +92,7 @@ def readVectors(fileName):
         
         cluster = Cluster()
         cluster.docList.append(doc)
-        clusterList.append(cluster)
-        
-        docIndexCluster.append(index)
+        doc.cluster = cluster
         
         index += 1
 
@@ -127,39 +108,27 @@ def computeProxList(measureFlag):
             else:
                 proxVal = calJaccard(doc.feaVec, afDoc.feaVec)
             proxList.append((index, afIndex + index + 1, 1 - proxVal))
+        print "calProx for doc" + str(index)
     proxList.sort(key = lambda tuple: tuple[2])
     #print proxList
 
 def freeMemory():
     global proxList
-    global clusterList
     global docList
-    global docIndexCluster
     
     del proxList
     proxList = []
-        
-    clusterQueue = []
-    clusterQueue += clusterList
-    while len(clusterQueue) > 0:
-        cluster = clusterQueue.pop()
-        clusterQueue += cluster.clusterList
-        del cluster
-    del clusterList
-    clusterList = []
     
-    del docIndexCluster
-    docIndexCluster = []
     for doc in docList:        
         cluster = Cluster()
         cluster.docList.append(doc)
-        clusterList.append(cluster)
-        docIndexCluster.append(doc.index)
+        del doc.cluster
+        doc.cluster = cluster
 
 def printProxList(measureFlag):
     global proxList
     if measureFlag == 0: matrixFile = open("cosMatrix.txt", "w")
-    if measureFlag == 1: matrixFile = open("jaccard.txt", "w")
+    if measureFlag == 1: matrixFile = open("jacMatrix.txt", "w")
     
     matrixFile.write(str(proxList))
     matrixFile.close()
@@ -176,13 +145,13 @@ if __name__ == '__main__':
     readVectors("FreqVectors.txt")
     resultFile = open("Result.txt", "w")
     
-    for measureFlag in [1, 0]:
+    for measureFlag in [0, 1]:
         startTime = time.time()
         computeProxList(measureFlag)
         endTime = time.time()
         resultFile.write("Time for computing the matrix:" + str(endTime - startTime) + "\n") 
         resultFile.flush()
-        #printProxList(measureFlag)
+        printProxList(measureFlag)
         
         startTime = time.time()
         hierachCluster()
