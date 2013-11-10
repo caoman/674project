@@ -37,8 +37,14 @@ cosine similarity and jaccard similarity is used in this assignment.
 \subsubsection{Single Link}
 We use single-link to cluster the documents.
 \subsubsection{Implemtation Details}
-Since the similarity between cluster1 and cluster2 is the same as the similarity between cluster2 and cluster1. We only need to store the upper triangle of the matrix. Also considering 
+Since the similarity between cluster1 and cluster2 is the same as the similarity between cluster2 and cluster1. We only need to store the upper triangle of the matrix.\\
+Also considering the expensive time complexity of finding the min distance in the matrix, we transform the proximity matrix to a proximity list and sort the list before the clustering. In this way, we only check the distance from the last position. The mapping relationships between the documents to the clusters are record in a list and updated every time two clusters are merged.  
 \subsection{K-means Clustering}
 \section{Evaluation}
+\subsection{Scalability}
+The time for clustering 2, 4, 8, 16 and 32 clusters with Hierachical Clustering and K-means is show in Fig. 
+\subsection{Quality}
+\subsubsection{Entropy}
+\subsubsection{Skew}
+The skew is measured as variance of the cardinalities of different clusters.
 \end{document}
-
