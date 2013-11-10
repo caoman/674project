@@ -71,6 +71,7 @@ def hierachCluster():
         newCluster.clusterList.append(cluster2)
         clusterList.remove(cluster2)
         clusterList[docIndexCluster[docIndex1]] = newCluster
+        print "clusterCnt:" + str(clusterCnt)
         #printCluster(newCluster)
         
         clusterCnt = len(clusterList)
@@ -189,19 +190,19 @@ if __name__ == '__main__':
     readVectors("FreqVectors.txt")
     resultFile = open("Result.txt", "w")
     
-    for measureFlag in [0, 1]:
+    for measureFlag in [1, 0]:
         startTime = time.time()
         computeProxMatrix(measureFlag)
         endTime = time.time()
         resultFile.write("Time for computing the matrix:" + str(endTime - startTime) + "\n") 
-        
+        resultFile.flush()
         printProxMatrix(measureFlag)
         
         startTime = time.time()
         hierachCluster()
         endTime = time.time()
         resultFile.write("Time for clustering all documents:" + str(endTime - startTime) + "\n")
-        
+        resultFile.flush()
         for clusterCnt in clusterCntList:
             clusters = getClusters(clusterCnt)
             resultFile.write("Time for " + str(clusterCnt) + " clusters:" + str(endTime - startTime) + "\n")
