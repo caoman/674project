@@ -8,9 +8,11 @@ from helperFunctions import calSkew, calEntropy, calCosSim, calJaccard
 
 docList = [] 
 clusterList = []
-proxMatrix = []     #store the distance
+flagMatrix = []     #indicate whether two documents are in the same cluster
 docIndexCluster = []    #record doc belongs to which cluster
 clusterCntList = [2, 4, 8, 16, 32, 64]
+proxList = []
+startIndex = 0      #describe the starting index for the min dis
 
 class Cluster:
     def __init__(self):
@@ -26,24 +28,26 @@ class Doc:
         self.newsID = newsID
                
 def hierachCluster():
-    global proxMatrix
+    global flagMatrix
+    global proxList
+    global startIndex
     
     clusterCnt = len(clusterList)
     while clusterCnt > 1:
-        minDis = 1.1            #the maximum value of distance is 1
-        minRowIndex = 0
-        minColIndex = 0
+        docIndex1 = 0
+        docIndex2 = 0
+        minDis = 1.1
         
-        for rowIndex, disRow in enumerate(proxMatrix):
-            for colIndex, dis in enumerate(disRow):
-                if dis < minDis: 
-                    minDis = dis
-                    minRowIndex = rowIndex
-                    minColIndex = colIndex
-        
+        subList = proxList[startIndex:]
+        for tuple in subList:
+            docIndex1 = tuple[0]
+            docIndex2 = tuple[1]
+            if flagMatrix[docIndex1][docIndex2 - docIndex1 - 1] == 0:
+                minDis = tuple[2]
+                break
+            startIndex += 1
+        #print "docIndex1:" + str(docIndex1) + " docIndex2:" + str(docIndex2)
         #update matrix set
-        docIndex1 = minRowIndex
-        docIndex2 = minRowIndex + minColIndex + 1
         cluster1 = clusterList[docIndexCluster[docIndex1]]
         cluster2 = clusterList[docIndexCluster[docIndex2]]
         for doc1 in cluster1.docList:
@@ -51,9 +55,9 @@ def hierachCluster():
             for doc2 in cluster2.docList:
                 docIndex2 = doc2.index
                 if docIndex1 < docIndex2:
-                    proxMatrix[docIndex1][docIndex2 - docIndex1 - 1] = 1.1
+                    flagMatrix[docIndex1][docIndex2 - docIndex1 - 1] = 1
                 else:
-                    proxMatrix[docIndex2][docIndex1 - docIndex2 - 1] = 1.1
+                    flagMatrix[docIndex2][docIndex1 - docIndex2 - 1] = 1
         #printProxMatrix()
         
         #assign the new mapping relationship between documents and clusters
@@ -123,29 +127,37 @@ def readVectors(fileName):
         index += 1
 
 #measureFlag = 0: cosine, measureFlag = 1: Jaccard
-def computeProxMatrix(measureFlag):
-    global proxMatrix
+def computeProxList(measureFlag):
+    global proxList
+    global flagMatrix
     
     for index, doc in enumerate(docList[:-1]):
-        proxMatrix.append([])
+        flagMatrix.append([])
         afDocs = docList[index+1: ]
-        for afDoc in afDocs:
+        for afIndex, afDoc in enumerate(afDocs):
             if measureFlag == 0:
                 proxVal = calCosSim(doc.feaVec, afDoc.feaVec)
             else:
                 proxVal = calJaccard(doc.feaVec, afDoc.feaVec)
-            proxMatrix[index].append(1 - proxVal)
+            flagMatrix[index].append(0)
+            proxList.append((index, afIndex + index + 1, 1 - proxVal))
+    proxList.sort(key = lambda tuple: tuple[2])
+    #print proxList
 
 def freeMemory():
-    global proxMatrix
+    global flagMatrix
+    global proxList
     global clusterList
     global docList
     global docIndexCluster
     
-    for row in proxMatrix:
+    del proxList
+    proxList = []
+    
+    for row in flagMatrix:
         del row
-    del proxMatrix
-    proxMatrix = []
+    del flagMatrix
+    flagMatrix = []
         
     clusterQueue = []
     clusterQueue += clusterList
@@ -164,18 +176,12 @@ def freeMemory():
         clusterList.append(cluster)
         docIndexCluster.append(doc.index)
 
-def printProxMatrix(measureFlag):
-    global proxMatrix
+def printProxList(measureFlag):
+    global proxList
     if measureFlag == 0: matrixFile = open("cosMatrix.txt", "w")
     if measureFlag == 1: matrixFile = open("jaccard.txt", "w")
     
-    for row in proxMatrix:
-        rowStr = ""
-        for cell in row:
-            rowStr += str(cell) + " "
-        matrixFile.write(rowStr + "\n")
-        matrixFile.flush()
-        #print rowStr 
+    matrixFile.write(str(proxList))
     matrixFile.close()
 
 def printCluster(cluster):
@@ -190,13 +196,13 @@ if __name__ == '__main__':
     readVectors("FreqVectors.txt")
     resultFile = open("Result.txt", "w")
     
-    for measureFlag in [1, 0]:
+    for measureFlag in [0, 1]:
         startTime = time.time()
-        computeProxMatrix(measureFlag)
+        computeProxList(measureFlag)
         endTime = time.time()
         resultFile.write("Time for computing the matrix:" + str(endTime - startTime) + "\n") 
         resultFile.flush()
-        printProxMatrix(measureFlag)
+        #printProxList(measureFlag)
         
         startTime = time.time()
         hierachCluster()
