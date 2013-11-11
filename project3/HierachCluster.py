@@ -6,10 +6,10 @@ Created on Nov 3, 2013
 import time
 from helperFunctions import calSkew, calEntropy, calCosSim, calJaccard
 
-docList = [] 
-clusterCntList = [2, 3, 4, 5, 6, 7] #the clusters we want
+docList = []        #store the docs
+clusterCntList = [2, 4, 8, 16, 32] #the number of clusters we want
 proxList = []       #the distance between different docs
-startIndex = 0      #describe the start searching index for the min dis in proxList
+startIndex = 0      #describe the start searching index in the proxList
 
 class Cluster:
     def __init__(self):
@@ -33,6 +33,7 @@ def hierachCluster():
         minDis = 1.1
         
         subList = proxList[startIndex:]
+        #get the minimum distance
         for tuple in subList:
             cluster1 = docList[tuple[0]].cluster
             cluster2 = docList[tuple[1]].cluster 
@@ -48,6 +49,7 @@ def hierachCluster():
         newCluster.clusterList.append(cluster1)
         newCluster.clusterList.append(cluster2)
         
+        #update the mapping relationships between the docs and clusters
         for doc in cluster1.docList:
             doc.cluster = newCluster
         for doc in cluster2.docList:
@@ -64,6 +66,7 @@ def getClusters(n):
         maxDis = -0.1
         maxDisClusters = []
         
+        #cut the cluster with bigger distance
         for cluster in clusters:
             if len(cluster.clusterList) > 0 and cluster.distance >= maxDis:
                 maxDis = cluster.distance
@@ -96,7 +99,7 @@ def readVectors(fileName):
         
         index += 1
 
-#measureFlag = 0: cosine, measureFlag = 1: Jaccard
+#measureFlag = 0: cosine, measureFlag = 1: jaccard
 def computeProxList(measureFlag):
     global proxList
     
@@ -145,7 +148,7 @@ if __name__ == '__main__':
     readVectors("FreqVectors.txt")
     resultFile = open("Result.txt", "w")
     
-    for measureFlag in [0, 1]:
+    for measureFlag in [1, 0]:
         startTime = time.time()
         computeProxList(measureFlag)
         endTime = time.time()
@@ -160,9 +163,9 @@ if __name__ == '__main__':
         resultFile.flush()
         for clusterCnt in clusterCntList:
             clusters = getClusters(clusterCnt)
+            endTime = time.time()
             resultFile.write("Time for " + str(clusterCnt) + " clusters:" + str(endTime - startTime) + "\n")
             resultFile.write("entropy:" + str(calEntropy(clusters)) + " " + "skew:" + str(calSkew(clusters)) + "\n")
-            endTime = time.time()
             resultFile.write("clusters" + "\n")
             for cluster in clusters:
                 resultFile.write(str([doc.newsID for doc in cluster.docList]) + "\n")
