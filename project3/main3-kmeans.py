@@ -8,11 +8,11 @@ import os, math, random, time
 from helperFunctions import *
 
 docList = []
-#numClusters = [2, 4, 8, 16, 32]
-numClusters = [2, 4]
+numClusters = [2, 4, 8, 16, 32]
+#numClusters = [32]
 #calSim = calCosSim
 calSim = calJaccard
-Verbose = False
+Verbose = True
 Threshold = 0.001
 
 class Doc:
@@ -88,6 +88,9 @@ def kmeans(K, threshold, clusters):
             var = c.recomputeCentroid()
             if (var > maxVar):
                 maxVar = var
+        if Verbose:
+            print "iter: " +  str(iter)
+            print "maxVariance: " + str(maxVar)
         if maxVar < threshold:
             break
         #if iter==1:
@@ -103,13 +106,14 @@ def printClusters(clusters):
         i = 0
         for cluster in clusters:
             #print cluster.centroid
-            print "cluster " + str(i) + ": " +str(len(cluster.docList))
+            #print "cluster " + str(i) + ": " +str(len(cluster.docList))
+            if len(cluster.docList)==0: print "Empty cluster!"
             i += 1
     print "entropy: " + str(calEntropy(clusters))
     print "skew: " + str(calSkew(clusters))
 
 if __name__ == '__main__':
-    readVectors("../FreqVectors.txt")
+    readVectors("../FreqVectors-all.txt")
 
     for K in numClusters:
         startTime = time.time()
