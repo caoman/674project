@@ -1,0 +1,66 @@
+cosine
+################
+2 clusters:
+iterations: 6
+time: 15.0476739407
+entropy: 0.535371429858
+skew: 69432.25
+################
+4 clusters:
+iterations: 6
+time: 18.2518119812
+entropy: 0.524727182268
+skew: 86209.6875
+################
+8 clusters:
+iterations: 24
+time: 104.770951033
+entropy: 0.492660666394
+skew: 15552.984375
+################
+16 clusters:
+iterations: 17
+time: 92.4990971088
+entropy: 0.463301652022
+skew: 7664.15234375
+################
+32 clusters:
+iterations: 20
+time: 134.642771006
+entropy: 0.458598673995
+skew: 2400.33496094
+
+Jaccard
+################
+2 clusters:
+iterations: 5
+time: 10.6029140949
+entropy: 0.571856706635
+skew: 1086806.25
+################
+4 clusters:
+iterations: 26
+time: 83.2533621788
+entropy: 0.536735714761
+skew: 257956.1875
+################
+8 clusters:
+iterations: 85
+time: 350.494536877
+entropy: 0.515824579422
+skew: 50646.734375
+################
+16 clusters:
+iterations: 22
+time: 108.88518095
+entropy: 0.487673985804
+skew: 10411.7773438
+################
+32 clusters:
+iterations: 33
+time: 201.464237928
+entropy: 0.466031830213
+skew: 4247.45996094
+
+
+
