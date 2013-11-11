@@ -1,0 +1,13 @@
+\BOOKMARK [1][-]{section.1}{Work Separation}{}% 1
+\BOOKMARK [1][-]{section.2}{Input}{}% 2
+\BOOKMARK [1][-]{section.3}{Metrics}{}% 3
+\BOOKMARK [1][-]{section.4}{Algorithms}{}% 4
+\BOOKMARK [2][-]{subsection.4.1}{Hierarchical Clustering}{section.4}% 5
+\BOOKMARK [3][-]{subsubsection.4.1.1}{Single Link}{subsection.4.1}% 6
+\BOOKMARK [3][-]{subsubsection.4.1.2}{Implemtation Details}{subsection.4.1}% 7
+\BOOKMARK [2][-]{subsection.4.2}{K-means Clustering}{section.4}% 8
+\BOOKMARK [1][-]{section.5}{Evaluation}{}% 9
+\BOOKMARK [2][-]{subsection.5.1}{Scalability}{section.5}% 10
+\BOOKMARK [2][-]{subsection.5.2}{Quality}{section.5}% 11
+\BOOKMARK [3][-]{subsubsection.5.2.1}{Entropy}{subsection.5.2}% 12
+\BOOKMARK [3][-]{subsubsection.5.2.2}{Skew}{subsection.5.2}% 13

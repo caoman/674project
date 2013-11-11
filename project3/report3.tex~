@@ -38,7 +38,7 @@ Cosine similarity and Jaccard similarity are used in this assignment.
 We use the single-link to define the inter-cluster similarity. In every iteration, the two clusters with minimum distance will be merged.
 \subsubsection{Implemtation Details}
 Since the similarity between cluster1 and cluster2 is the same as the similarity between cluster2 and cluster1. We only need to store the \emph{upper triangle of the matrix}.\\
-Also considering the expensive time complexity of finding the min distance in the matrix, we transform the proximity matrix to a proximity list and \emph{sort} the list before the clustering. In this way, we only check the distance from the last position. For every document, we records which cluster it belongs to and for every cluster, we record which documents are in it.\\
+Also considering the expensive time complexity of finding the min distance in the matrix, we transform the proximity matrix to a proximity list and \emph{sort} the list before the clustering. In this way, we only check the distance from the last position. For every document, we records which cluster it belongs to and for every cluster, we record the documents in it.\\
 The sorting time for the proximity list is $O(N^2logN)$ since there exist $O(\frac{N^2}{2})$elements in the list. There are N iterations in total and in every iterator, we need to find the next minimum distance and update the mapping relationship between the documents and clusters. The time complexity of finding the next minimum distance and updating the mapping relationship in N iterations is $O(N^2)$, so the total time complexity is $O(N^2logN)$.   
 \subsection{K-means Clustering}
 We implement the na\"ive K-means algorithm as described in the slides from
