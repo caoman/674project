@@ -66,6 +66,8 @@ def pruneBySubsumption(rules):
                             and set(rule.match_both) <= set(kr.match_both):
                         subsumed = True
                         break
+            else:
+                break
             if subsumed:
                 break
         if not subsumed:
