@@ -10,8 +10,8 @@ from helperFunctions import *
 docList = []
 numClusters = [2, 4, 8, 16, 32]
 #numClusters = [32]
-#calSim = calCosSim
-calSim = calJaccard
+calSim = calCosSim
+#calSim = calJaccard
 Verbose = True
 Threshold = 0.001
 
@@ -113,7 +113,7 @@ def printClusters(clusters):
     print "skew: " + str(calSkew(clusters))
 
 if __name__ == '__main__':
-    readVectors("../FreqVectors-all.txt")
+    readVectors("FreqVectors.txt")
 
     for K in numClusters:
         startTime = time.time()
@@ -125,5 +125,6 @@ if __name__ == '__main__':
         print "iterations: " + str(iter)
         print "time: " + str(elapse)
         printClusters(clusters)
+        print "################"
 
 

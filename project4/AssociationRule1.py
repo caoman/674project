@@ -12,6 +12,10 @@ valFold = 5
 assRules = []
 Verbose = True 
 K = 5      #How many rule selected for testing the instance
+#ordering =["confidence", "support"] 
+#ordering =["support","confidence"] 
+ordering =["lift", "support", "confidence"] 
+#ordering =["n_left","lift","support","confidence"]
 
 #Transform vector from the key-value to transaction form
 def transformVec():
@@ -51,7 +55,7 @@ def pruneByLhsRhs(rules):
 
 def pruneBySubsumption(rules):
     print "sorting rules ..."
-    Orange.associate.sort(rules, ["confidence", "support"])
+    Orange.associate.sort(rules, ordering)
     print "pruning by subsumption ..."
     savedRules = []
     subsumedRules = []
@@ -121,11 +125,11 @@ def getAssociationRules():
         totalTestCnt = len(test)
         accurateCnt = 0
                 
-        rules = Orange.associate.AssociationRulesSparseInducer(train, support = 0.1, store_examples = True)
+        rules = Orange.associate.AssociationRulesSparseInducer(train, support = 0.02, store_examples = True)
         rules = pruneByLhsRhs(rules)
         assRules = pruneBySubsumption(rules)
         if Verbose:
-            Orange.associate.print_rules(assRules, ["support", "confidence"])
+            Orange.associate.print_rules(assRules, ["support", "confidence", "lift"])
         print "total # of rules: " + str(len(assRules))
         for testInstance in test:
             if TestRuleForInstance(testInstance) is True:
@@ -135,6 +139,6 @@ def getAssociationRules():
     print "Accuracy:" + str(accuracy)
 
 if __name__ == '__main__':
-    transformVec()
+    #transformVec()
     getAssociationRules()
     
