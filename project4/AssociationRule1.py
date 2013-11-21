@@ -11,7 +11,7 @@ freqFileName = "FreqVectors.txt"
 valFold = 5
 Verbose = True 
 K = 4     #How many rule selected for testing the instance
-defaultTopic = ""
+DEFAULT_TOPIC = ""
 #ordering =["confidence", "support"] 
 #ordering =["support","confidence"] 
 ordering =["lift", "confidence", "support"] 
@@ -19,7 +19,7 @@ ordering =["lift", "confidence", "support"]
 
 #Transform vector from the key-value to transaction form
 def transformVec():
-    global defaultTopic
+    global DEFAULT_TOPIC
     topicCnt = {}
     freqFile = open(freqFileName, 'r')
     transFile = open(transFileName, 'w')
@@ -37,7 +37,7 @@ def transformVec():
                 topicCnt[topic] = 1
     freqFile.close()
     transFile.close()        
-    defaultTopic = max(topicCnt, key = topicCnt.get)
+    DEFAULT_TOPIC = max(topicCnt, key = topicCnt.get)
     
     
 def pruneByLhsRhs(rules):
@@ -118,10 +118,20 @@ def pruneSkew(rules):
         if addFlag: 
             assRules.append(rule)
     return assRules        
-    
-def TestRuleForInstance(testInstance, assRules):
-    words = set([value.variable.name for value in testInstance.get_metas().values() if value.variable.name.islower()])
-    topics = set([value.variable.name for value in testInstance.get_metas().values() if value.variable.name.isupper()])
+
+def prune(rules):
+    rules = pruneByLhsRhs(rules)
+    rules = pruneBySubsumption(rules)
+    #rules = pruneSkew(rules)
+    return rules
+
+def TestRuleForInstance(testInstance, assRules, defaultTopic):
+    if isinstance(testInstance, Orange.data.Instance):
+        words = set([value.variable.name for value in testInstance.get_metas().values() if value.variable.name.islower()])
+        topics = set([value.variable.name for value in testInstance.get_metas().values() if value.variable.name.isupper()])
+    else:
+        words = set(testInstance.feaVec.keys())
+        topics = set([topic.upper() for topic in testInstance.topics])
     #print "docWords:" + str(words)
     #print "docTopics:" + str(topics)
     
@@ -132,51 +142,52 @@ def TestRuleForInstance(testInstance, assRules):
         ruleTopics = set([value.variable.name for value in rule.right.get_metas().values()])
         #print "RuleWord:" + str(ruleWords)
         #print "RuleTopics:" + str(ruleTopics)
-        if ruleWords.issubset(words) and ruleCnt < K:
+        if ruleWords.issubset(words):
             preTopics = preTopics.union(ruleTopics)
             ruleCnt += 1
+        if ruleCnt > K:
+            break
     if len(preTopics) == 0: 
         preTopics.add(defaultTopic)
     #print "RuleTopics:" + str(preTopics)
     #curAcc = len(preTopics.intersection(topics)) * 1.0 / max(len(topics), len(preTopics))
     curAcc = len(preTopics.intersection(topics)) * 1.0 / len(topics)
-    if curAcc < 0.5:
-        print words
-        print topics
-        print preTopics
+    #if curAcc < 0.5:
+        #print words
+        #print topics
+        #print preTopics
     return curAcc
     
 def getAssociationRules():
     data = Orange.data.Table(transFileName)
-    print data.domain
-    dataLen = len(data)
-    instanceDict = {}
-    instanceDict["loss"] = 1;
-    instanceDict["year"] = 1;
-    data.append(Orange.data.Instance(instanceDict))
-    print data[dataLen]
+#    print data.domain
+#    dataLen = len(data)
+#    instanceDict = {}
+#    instanceDict["loss"] = 1;
+#    instanceDict["year"] = 1;
+#    data.append(Orange.data.Instance(instanceDict))
+#    print data[dataLen]
     #Cross Validation
-#    cvIndices = Orange.data.sample.SubsetIndicesCV(data, valFold)
-#    accuracy = 0
-#    for fold in range(valFold):
-#        train = data.select(cvIndices, fold, negate = 1)
-#        test  = data.select(cvIndices, fold)
-#        totalTestCnt = len(test)
-#        accurateCnt = 0
-#                
-#        rules = Orange.associate.AssociationRulesSparseInducer(train, support = 0.018, store_examples = True)
-#        rules = pruneByLhsRhs(rules)
-#        rules = pruneBySubsumption(rules)
-#        #rules = pruneSkew(rules)
-#        
-#        if Verbose:
-#            Orange.associate.print_rules(rules, ["support", "confidence", "lift"])
-#        print "total # of rules: " + str(len(rules))
-#        for testInstance in test:
-#            accurateCnt += TestRuleForInstance(testInstance, rules) 
-#        accuracy += accurateCnt * 1.0 / totalTestCnt
-#        break
-#    print "Accuracy:" + str(accuracy)
+    cvIndices = Orange.data.sample.SubsetIndicesCV(data, valFold)
+    accuracy = 0
+    for fold in range(valFold):
+        train = data.select(cvIndices, fold, negate = 1)
+        test  = data.select(cvIndices, fold)
+        totalTestCnt = len(test)
+        accurateCnt = 0
+                
+        rules = Orange.associate.AssociationRulesSparseInducer(train, support = 0.018, store_examples = True)
+        rules = prune(rules)
+        
+        if Verbose:
+            Orange.associate.print_rules(rules, ["support", "confidence", "lift"])
+        print "total # of rules: " + str(len(rules))
+        for testInstance in test:
+            accurateCnt += TestRuleForInstance(testInstance, rules, DEFAULT_TOPIC) 
+        accuracy += accurateCnt * 1.0 / totalTestCnt
+        break
+    print "Accuracy:" + str(accuracy)
+    #print "Accuracy:" + str(accuracy/valFold)
 
 if __name__ == '__main__':
     transformVec()
