@@ -4,48 +4,38 @@ Created on Nov 17, 2013
 
 @author: lilong, man
 '''
-import Orange
+import Orange, math, time
 
+preTopicVecDict = {}
+testTopicVecDict = {}
 transFileName = "Transactions.basket"
 freqFileName = "FreqVectors.txt"
 valFold = 5
-Verbose = True 
-K = 4     #How many rule selected for testing the instance
+Verbose = False 
+K = 4   #How many rule selected for testing the instance
 DEFAULT_TOPIC = ""
-#ordering =["confidence", "support"] 
-#ordering =["support","confidence"] 
-ordering =["lift", "confidence", "support"] 
-#ordering =["n_left","lift","support","confidence"]
+ordering =["lift", "confidence", "support"]     #order by lift firstly, then by confidence, and then by support
 
-#Transform vector from the key-value to transaction form
+#Transform vector from key-value to transaction form
 def transformVec():
-    global DEFAULT_TOPIC
-    topicCnt = {}
     freqFile = open(freqFileName, 'r')
     transFile = open(transFileName, 'w')
-    
+
     while True:
         metaData = freqFile.readline() 
         if len(metaData) == 0: break
         metaVec = eval(metaData)
         freqVec = eval(freqFile.readline())    
         transFile.write(",".join(freqVec.keys() + [topic.upper() for topic in metaVec["TOPICS"]]) + "\n")
-        for topic in metaVec["TOPICS"]:
-            if topic in topicCnt.keys():
-                topicCnt[topic] += 1
-            else:
-                topicCnt[topic] = 1
     freqFile.close()
     transFile.close()        
-    DEFAULT_TOPIC = max(topicCnt, key = topicCnt.get)
-    
-    
+
+#prune the rule which the left side or right side contains the topics
 def pruneByLhsRhs(rules):
     print "pruning by LHS and RHS of rules ..."
     savedRules = []
     for rule in rules:
         rightList = [value.variable.name for value in rule.right.get_metas().values()]
-        #print rightList
         topicFlag = True
         for rightElem in rightList:
             if rightElem.islower():
@@ -98,42 +88,27 @@ def pruneBySubsumption(rules):
         Orange.associate.print_rules(subsumedRules, ["support", "confidence"])
     return savedRules
 
-def pruneSkew(rules):
-    assRules = []
-    threshold = 80
-    topicRuleDict = {}
-    
-    for rule in rules:
-        topics = [value.variable.name for value in rule.right.get_metas().values()]
-        addFlag = False
-        
-        for topic in topics:
-            if topic in topicRuleDict.keys():
-                topicRuleDict[topic] += 1
-                if topicRuleDict[topic] < threshold:
-                    addFlag = True
-                    break
-            else:
-                topicRuleDict[topic] = 1
-        if addFlag: 
-            assRules.append(rule)
-    return assRules        
-
 def prune(rules):
     rules = pruneByLhsRhs(rules)
     rules = pruneBySubsumption(rules)
-    #rules = pruneSkew(rules)
     return rules
 
-def TestRuleForInstance(testInstance, assRules, defaultTopic):
+def TestRuleForInstance(testInstance, assRules, defaultTopic, testIndex):
+    global testTopicVecDict
+    
     if isinstance(testInstance, Orange.data.Instance):
         words = set([value.variable.name for value in testInstance.get_metas().values() if value.variable.name.islower()])
         topics = set([value.variable.name for value in testInstance.get_metas().values() if value.variable.name.isupper()])
     else:
         words = set(testInstance.feaVec.keys())
         topics = set([topic.upper() for topic in testInstance.topics])
-    #print "docWords:" + str(words)
-    #print "docTopics:" + str(topics)
+
+    for topic in topics:
+        if testTopicVecDict.has_key(topic):
+            testTopicVecDict[topic].add(testIndex)
+        else:
+            testTopicVecDict[topic] = set()
+            testTopicVecDict[topic].add(testIndex)
     
     ruleCnt = 0
     preTopics = set()
@@ -149,45 +124,119 @@ def TestRuleForInstance(testInstance, assRules, defaultTopic):
             break
     if len(preTopics) == 0: 
         preTopics.add(defaultTopic)
-    #print "RuleTopics:" + str(preTopics)
-    #curAcc = len(preTopics.intersection(topics)) * 1.0 / max(len(topics), len(preTopics))
+        
+    global preTopicVecDict
+    for topic in preTopics:
+        if topic in preTopicVecDict.keys():
+            preTopicVecDict[topic].add(testIndex)
+        else:
+            preTopicVecDict[topic] = set()
+            preTopicVecDict[topic].add(testIndex)
     curAcc = len(preTopics.intersection(topics)) * 1.0 / len(topics)
-    #if curAcc < 0.5:
-        #print words
-        #print topics
-        #print preTopics
     return curAcc
+
+def splitTrain(train):
+    topicVecDict = {}
+    global DEFAULT_TOPIC
+    
+    for trainInstance in train:
+        for val in trainInstance.get_metas().values():
+            word = val.variable.name
+            if word.isupper():
+                if word in topicVecDict:
+                    topicVecDict[word].append(trainInstance)
+                else:
+                    topicVecDict[word] = [trainInstance]
+    DEFAULT_TOPIC = max(topicVecDict.keys(), key = lambda key: len(topicVecDict[key]))
+    
+    dataSize = len(train)
+    maxTopic = ""
+    for topic in topicVecDict.keys():
+        if len(topicVecDict[topic]) * 1.0 / dataSize > 0.3:
+            maxTopic = topic
+            break
+    print maxTopic
+    trainList = []
+    if len(maxTopic) > 0: 
+        train1 = topicVecDict[maxTopic]
+        train2 = [trainInstance for topic in topicVecDict.keys() if topic != maxTopic for trainInstance in topicVecDict[topic]]
+        trainList = [train1, train2]
+    else:
+        trainList = [train]
+    return trainList
+    
+#when combining the rules together, we need to update the suppport, confidence and lift for the rule
+def update(rules1, rules2):
+    trainSize = rules1[0].n_examples + rules2[0].n_examples
+    
+    for rule1 in rules1:
+        rule1.support = rule1.n_applies_both / trainSize
+        nLeft = rule1.n_applies_left
+        nRight = rule1.n_applies_right
+        for rule2 in rules2:
+            if rule1.left == rule2.left:
+                nLeft += 1
+            if rule1.right == rule2.right:
+                nRight += 1
+        rule1.confidence = rule1.n_applies_both / nLeft
+        rule1.lift = trainSize * rule1.n_applies_both / (nLeft * nRight)           
     
 def getAssociationRules():
     data = Orange.data.Table(transFileName)
-#    print data.domain
-#    dataLen = len(data)
-#    instanceDict = {}
-#    instanceDict["loss"] = 1;
-#    instanceDict["year"] = 1;
-#    data.append(Orange.data.Instance(instanceDict))
-#    print data[dataLen]
-    #Cross Validation
-    cvIndices = Orange.data.sample.SubsetIndicesCV(data, valFold)
     accuracy = 0
-    for fold in range(valFold):
-        train = data.select(cvIndices, fold, negate = 1)
-        test  = data.select(cvIndices, fold)
-        totalTestCnt = len(test)
-        accurateCnt = 0
-                
-        rules = Orange.associate.AssociationRulesSparseInducer(train, support = 0.018, store_examples = True)
-        rules = prune(rules)
-        
-        if Verbose:
-            Orange.associate.print_rules(rules, ["support", "confidence", "lift"])
-        print "total # of rules: " + str(len(rules))
-        for testInstance in test:
-            accurateCnt += TestRuleForInstance(testInstance, rules, DEFAULT_TOPIC) 
-        accuracy += accurateCnt * 1.0 / totalTestCnt
-        break
+    midIndex = int(len(data) * 0.8)
+    train = data[0: midIndex]
+    trainList = splitTrain(train)
+    
+    test = data[midIndex + 1:]
+    totalTestCnt = len(test)
+    accurateCnt = 0
+    
+    rules = []
+    ruleList = []
+    
+    startTime = time.time()
+    for train in trainList:
+        tmpRules = Orange.associate.AssociationRulesSparseInducer(train, support = 0.05, store_examples = True)
+        tmpRules = pruneByLhsRhs(tmpRules)
+        ruleList.append(tmpRules)
+    if len(ruleList) > 0: 
+        update(ruleList[0], ruleList[1])
+        update(ruleList[1], ruleList[0])   
+    rules = [rule for rules in ruleList for rule in rules]     
+    rules = prune(rules)
+    endTime = time.time()
+    print "Time for building the model:" + str(endTime - startTime)
+    
+    if Verbose:
+        Orange.associate.print_rules(rules, ["support", "confidence", "lift"])
+    print "total # of rules: " + str(len(rules))
+    instanceIndex = 0
+    startTime = time.time()
+    for testInstance in test:
+        instanceIndex += 1
+        accurateCnt += TestRuleForInstance(testInstance, rules, DEFAULT_TOPIC, instanceIndex)
+    endTime = time.time()
+    print "Time for testing the model:" + str(endTime - startTime)
+    print "Time for testing one doc:" + str((endTime - startTime) * 1.0 / len(test)) 
+    accuracy += accurateCnt * 1.0 / totalTestCnt        
     print "Accuracy:" + str(accuracy)
-    #print "Accuracy:" + str(accuracy/valFold)
+    
+    precisionList = []
+    recallList = []
+    fmeasureList = []
+    global preTopicVecDict
+    global testTopicVecDict
+    for topic in preTopicVecDict.keys():
+        interset = testTopicVecDict[topic].intersection(preTopicVecDict[topic])
+        precision = len(interset) * 1.0 / len(preTopicVecDict[topic])
+        recall = len(interset) * 1.0 / len(testTopicVecDict[topic])
+        precisionList.append(precision)
+        recallList.append(recall)
+        fmeasureList.append(2 * precision * recall / (precision + recall))
+    print "Precision:" + str(sum(precisionList) / len(precisionList))
+    print "Recall:" + str(sum(recallList) / len(recallList))
+    print "F-measure:" + str(sum(fmeasureList) / len(fmeasureList))
 
 if __name__ == '__main__':
     transformVec()
