@@ -1,0 +1,266 @@
+####################################
+number of clusters: 8
+iter: 1
+maxVariance: 0.678814935103
+iter: 2
+maxVariance: 0.0754517838046
+iter: 3
+maxVariance: 0.094156357974
+iter: 4
+maxVariance: 0.0256771361814
+iter: 5
+maxVariance: 0.0122665322282
+iter: 6
+maxVariance: 0.0119041524281
+iter: 7
+maxVariance: 0.0116749951101
+iter: 8
+maxVariance: 0.00919908447656
+Clustering time: 595.370170832
+
+MinSupport = 0.05
+Rule construction time: 4.65072917938
+top-K rules, K= 1
+Test time: 21.8028578758
+Average test time for one doc: 0.00958788824794
+Accuracy: 0.517260334213
+Precision:0.35052808103
+Recall:0.515958534712
+F-measure:0.360350302801
+top-K rules, K= 2
+Test time: 23.1296401024
+Average test time for one doc: 0.0101713456915
+Accuracy: 0.524956024626
+Precision:0.338106181285
+Recall:0.523670924383
+F-measure:0.349350480232
+top-K rules, K= 3
+Test time: 22.9754300117
+Average test time for one doc: 0.0101035312277
+Accuracy: 0.530233069481
+Precision:0.332783513253
+Recall:0.528880909831
+F-measure:0.344706138232
+top-K rules, K= 4
+Test time: 21.6039738655
+Average test time for one doc: 0.009500428261
+Accuracy: 0.533311345646
+Precision:0.329244233911
+Recall:0.531629400585
+F-measure:0.341382254893
+top-K rules, K= 5
+Test time: 22.4715030193
+Average test time for one doc: 0.00988192744913
+Accuracy: 0.533531222515
+Precision:0.327843061236
+Recall:0.532080664122
+F-measure:0.339976046498
+
+MinSupport = 0.1
+Rule construction time: 2.47320389748
+top-K rules, K= 1
+Test time: 20.352809906
+Average test time for one doc: 0.00895022423307
+Accuracy: 0.500916153621
+Precision:0.36283222956
+Recall:0.515712918857
+F-measure:0.392300077863
+top-K rules, K= 2
+Test time: 20.2663719654
+Average test time for one doc: 0.0089122128256
+Accuracy: 0.514768396365
+Precision:0.366811309228
+Recall:0.53015335207
+F-measure:0.398838813977
+top-K rules, K= 3
+Test time: 20.1588928699
+Average test time for one doc: 0.00886494849162
+Accuracy: 0.515867780709
+Precision:0.366761598654
+Recall:0.531507142684
+F-measure:0.399038473153
+top-K rules, K= 4
+Test time: 20.1663210392
+Average test time for one doc: 0.00886821505682
+Accuracy: 0.516087657578
+Precision:0.366886123542
+Recall:0.531958406222
+F-measure:0.39924209078
+top-K rules, K= 5
+Test time: 20.4321320057
+Average test time for one doc: 0.00898510642291
+Accuracy: 0.516087657578
+Precision:0.366886123542
+Recall:0.531958406222
+F-measure:0.39924209078
+
+MinSupport = 0.15
+Rule construction time: 2.17390799522
+top-K rules, K= 1
+Test time: 19.8287949562
+Average test time for one doc: 0.00871978670018
+Accuracy: 0.523343594254
+Precision:0.403745923482
+Recall:0.552055132075
+F-measure:0.434743894395
+top-K rules, K= 2
+Test time: 19.6372919083
+Average test time for one doc: 0.00863557251903
+Accuracy: 0.524662855468
+Precision:0.403810025146
+Recall:0.553860186227
+F-measure:0.435127055407
+top-K rules, K= 3
+Test time: 19.9858999252
+Average test time for one doc: 0.00878887419755
+Accuracy: 0.524662855468
+Precision:0.403670521396
+Recall:0.553860186227
+F-measure:0.434989062563
+top-K rules, K= 4
+Test time: 20.1044530869
+Average test time for one doc: 0.00884100839351
+Accuracy: 0.524662855468
+Precision:0.403670521396
+Recall:0.553860186227
+F-measure:0.434989062563
+top-K rules, K= 5
+Test time: 19.919533968
+Average test time for one doc: 0.00875968951978
+Accuracy: 0.524662855468
+Precision:0.403670521396
+Recall:0.553860186227
+F-measure:0.434989062563
+####################################
+number of clusters: 16
+iter: 1
+maxVariance: 1
+iter: 2
+maxVariance: 0.163975815627
+iter: 3
+maxVariance: 0.0734502162474
+iter: 4
+maxVariance: 0.0621576516054
+iter: 5
+maxVariance: 0.024654751087
+iter: 6
+maxVariance: 0.01907171113
+iter: 7
+maxVariance: 0.0163426367741
+iter: 8
+maxVariance: 0.00345307840904
+Clustering time: 735.018455982
+
+MinSupport = 0.05
+Rule construction time: 9.384786129
+top-K rules, K= 1
+Test time: 27.6909368038
+Average test time for one doc: 0.0121771929656
+Accuracy: 0.530606860158
+Precision:0.378077025721
+Recall:0.288696008465
+F-measure:0.231081201037
+top-K rules, K= 2
+Test time: 27.4966161251
+Average test time for one doc: 0.0120917397208
+Accuracy: 0.538302550572
+Precision:0.371532728025
+Recall:0.2925522033
+F-measure:0.225346550672
+top-K rules, K= 3
+Test time: 27.8511669636
+Average test time for one doc: 0.0122476547773
+Accuracy: 0.543579595427
+Precision:0.368689052542
+Recall:0.295157196025
+F-measure:0.222892013187
+top-K rules, K= 4
+Test time: 27.7190928459
+Average test time for one doc: 0.0121895746904
+Accuracy: 0.546657871592
+Precision:0.366849965369
+Recall:0.296531441401
+F-measure:0.221176210487
+top-K rules, K= 5
+Test time: 27.7563149929
+Average test time for one doc: 0.0122059432686
+Accuracy: 0.546877748461
+Precision:0.36609420082
+Recall:0.29675707317
+F-measure:0.220430014816
+
+MinSupport = 0.1
+Rule construction time: 4.97406888008
+top-K rules, K= 1
+Test time: 26.6255180836
+Average test time for one doc: 0.011708671101
+Accuracy: 0.52411682791
+Precision:0.398486418907
+Recall:0.292898085301
+F-measure:0.272650693093
+top-K rules, K= 2
+Test time: 26.0988559723
+Average test time for one doc: 0.0114770694689
+Accuracy: 0.537969070654
+Precision:0.400301877904
+Recall:0.299316055617
+F-measure:0.275669883285
+top-K rules, K= 3
+Test time: 25.989153862
+Average test time for one doc: 0.0114288275558
+Accuracy: 0.539068454999
+Precision:0.400242021549
+Recall:0.299917740335
+F-measure:0.275741036564
+top-K rules, K= 4
+Test time: 26.2684159279
+Average test time for one doc: 0.0115516340932
+Accuracy: 0.539288331867
+Precision:0.4002990655
+Recall:0.300118301907
+F-measure:0.27583512938
+top-K rules, K= 5
+Test time: 26.0473599434
+Average test time for one doc: 0.0114544238977
+Accuracy: 0.539288331867
+Precision:0.4002990655
+Recall:0.300118301907
+F-measure:0.27583512938
+
+MinSupport = 0.15
+Rule construction time: 4.29722499847
+top-K rules, K= 1
+Test time: 25.6767940521
+Average test time for one doc: 0.0112914661619
+Accuracy: 0.548962914101
+Precision:0.416263704721
+Recall:0.311054569508
+F-measure:0.295000462083
+top-K rules, K= 2
+Test time: 25.3993740082
+Average test time for one doc: 0.0111694696606
+Accuracy: 0.550282175315
+Precision:0.416250936768
+Recall:0.311856815798
+F-measure:0.295152417442
+top-K rules, K= 3
+Test time: 25.6245059967
+Average test time for one doc: 0.0112684722941
+Accuracy: 0.550282175315
+Precision:0.416173523662
+Recall:0.311856815798
+F-measure:0.295080486589
+top-K rules, K= 4
+Test time: 26.1133680344
+Average test time for one doc: 0.0114834512024
+Accuracy: 0.550282175315
+Precision:0.416173523662
+Recall:0.311856815798
+F-measure:0.295080486589
+top-K rules, K= 5
+Test time: 25.582679987
+Average test time for one doc: 0.0112500791499
+Accuracy: 0.550282175315
+Precision:0.416173523662
+Recall:0.311856815798
+F-measure:0.295080486589
