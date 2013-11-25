@@ -166,17 +166,17 @@ def splitTrain(train):
     return trainList
     
 #when combining the rules together, we need to update the suppport, confidence and lift for the rule
-def update(rules1, rules2):
-    trainSize = rules1[0].n_examples + rules2[0].n_examples
+def update(rules1, train2):
+    trainSize = rules1[0].n_examples + len(train2)
     
     for rule1 in rules1:
         rule1.support = rule1.n_applies_both / trainSize
         nLeft = rule1.n_applies_left
         nRight = rule1.n_applies_right
-        for rule2 in rules2:
-            if rule1.left == rule2.left:
+        for trainInstance in train2:
+            if rule1.applies_left(trainInstance):
                 nLeft += 1
-            if rule1.right == rule2.right:
+            if rule1.applies_right(trainInstance):
                 nRight += 1
         rule1.confidence = rule1.n_applies_both / nLeft
         rule1.lift = trainSize * rule1.n_applies_both / (nLeft * nRight)           
@@ -201,8 +201,8 @@ def getAssociationRules():
         tmpRules = pruneByLhsRhs(tmpRules)
         ruleList.append(tmpRules)
     if len(ruleList) > 0: 
-        update(ruleList[0], ruleList[1])
-        update(ruleList[1], ruleList[0])   
+        update(ruleList[0], trainList[1])
+        update(ruleList[1], trainList[0])   
     rules = [rule for rules in ruleList for rule in rules]     
     rules = prune(rules)
     endTime = time.time()
