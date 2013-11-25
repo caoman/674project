@@ -4,14 +4,16 @@ Created on Nov 17, 2013
 
 @author: lilong, man
 '''
-import Orange, os
+import Orange, os, time
 import AssociationRule1, Kmeans
 from AssociationRule1 import *
 from Kmeans import *
 
 DOMAIN = None
-Verbose = True
+Verbose = False
 AssociationRule1.Verbose, Kmeans.Verbose = Verbose, Verbose
+Kmeans.Verbose = True
+testDocList = []
 
 class ClusterWithRules:
     def __init__(self, cluster):
@@ -29,14 +31,17 @@ class ClusterWithRules:
                     topicCnt[topic] += 1
                 else:
                     topicCnt[topic] = 1
-        rules = Orange.associate.AssociationRulesSparseInducer(data, support = 0.1, store_examples = True)
+        self.defaultTopic = max(topicCnt, key=topicCnt.get).upper()
+        #print self.defaultTopic
+    
+    def updateRules(self, minSup):
+        rules = Orange.associate.AssociationRulesSparseInducer(data, support = minSup, store_examples = True)
         self.rules = prune(rules)
+        #print "rules in cluster: " + str(len(self.rules))
         if Verbose:
             Orange.associate.print_rules(self.rules, ["support", "confidence", "lift"])
-        print "rules in cluster: " + str(len(self.rules))
-        self.defaultTopic = max(topicCnt, key=topicCnt.get)
 
-def testWithClusterForInstance(ruleClusters, doc):
+def testWithClusterForInstance(ruleClusters, doc, instanceIndex, K, preTopicVecDict, testTopicVecDict):
     maxSim = -1
     targetCluster = None
     for c in ruleClusters:
@@ -44,25 +49,53 @@ def testWithClusterForInstance(ruleClusters, doc):
         if sim > maxSim:
             maxSim = sim
             targetCluster = c
-    return TestRuleForInstance(doc, targetCluster.rules, targetCluster.defaultTopic)
+    return TestRuleForInstance(doc, targetCluster.rules, targetCluster.defaultTopic, instanceIndex, K, preTopicVecDict, testTopicVecDict)
 
-def CBAwithCluster(numCluster, data):
+
+def CBAwithCluster(numCluster):
+
+    print "####################################"
+    print "number of clusters: " +  str(numCluster)
+    startTime = time.time()
     clusters = runKmeans(numCluster, Threshold)
-    #if Verbose:
-    printClusters(clusters)
+    #printClusters(clusters)
     ruleClusters = [ClusterWithRules(cluster) for cluster in clusters]
-    accurateCnt = 0
-    for doc in docList:
-        accurateCnt += testWithClusterForInstance(ruleClusters, doc)
-    accuracy = accurateCnt * 1.0 / len(docList)
-    print "Accuracy:" + str(accuracy)
+    clustering_time = time.time() - startTime
+    print "Clustering time: " + str(clustering_time)
+    for minSup in MIN_SUPs:
+        print
+        print "MinSupport = " + str(minSup)
+        startTime = time.time()
+        for ruleCluster in ruleClusters:
+            ruleCluster.updateRules(minSup)
+        rule_time = time.time() - startTime
+        print "Rule construction time: " + str(rule_time)
+        for K in Ks:
+            print "top-K rules, K= " + str(K)
+            preTopicVecDict = {}
+            testTopicVecDict = {}
+            accurateCnt = 0
+            instanceIndex = 0
+            startTime = time.time()
+            for doc in testDocList:
+                instanceIndex += 1
+                accurateCnt += testWithClusterForInstance(ruleClusters, doc, instanceIndex, K, preTopicVecDict, testTopicVecDict)
+            test_time = time.time() - startTime
+            print "Test time: " + str(test_time)
+            print "Average test time for one doc: " + str(test_time/len(testDocList))
+            accuracy = accurateCnt * 1.0 / len(testDocList)
+            print "Accuracy: " + str(accuracy)
+            computePrecisionRecall(preTopicVecDict, testTopicVecDict)
 
 if __name__ == '__main__':
     readVectors(freqFileName)
+    testDocList = Kmeans.docList[len(Kmeans.docList)*4/5 : ]
+    Kmeans.docList = Kmeans.docList[0 : len(Kmeans.docList)*4/5]
+
     if not os.path.isfile(transFileName):
         transformVec()
     data = Orange.data.Table(transFileName)
     DOMAIN = data.domain
     for numCluster in numClusters:
-        CBAwithCluster(numCluster, data)
+        CBAwithCluster(numCluster)
         

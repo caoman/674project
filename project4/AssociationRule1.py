@@ -6,15 +6,16 @@ Created on Nov 17, 2013
 '''
 import Orange, math, time
 
-preTopicVecDict = {}
-testTopicVecDict = {}
+
 transFileName = "Transactions.basket"
 freqFileName = "FreqVectors.txt"
 valFold = 5
 Verbose = False 
-K = 4   #How many rule selected for testing the instance
+MIN_SUPs = [0.05, 0.1, 0.15]
+Ks = [1,2,3,4,5]   #How many rule selected for testing the instance
 DEFAULT_TOPIC = ""
 ordering =["lift", "confidence", "support"]     #order by lift firstly, then by confidence, and then by support
+
 
 #Transform vector from key-value to transaction form
 def transformVec():
@@ -32,7 +33,7 @@ def transformVec():
 
 #prune the rule which the left side or right side contains the topics
 def pruneByLhsRhs(rules):
-    print "pruning by LHS and RHS of rules ..."
+    #print "pruning by LHS and RHS of rules ..."
     savedRules = []
     for rule in rules:
         rightList = [value.variable.name for value in rule.right.get_metas().values()]
@@ -52,9 +53,9 @@ def pruneByLhsRhs(rules):
     return savedRules
 
 def pruneBySubsumption(rules):
-    print "sorting rules ..."
+    #print "sorting rules ..."
     Orange.associate.sort(rules, ordering)
-    print "pruning by subsumption ..."
+    #print "pruning by subsumption ..."
     savedRules = []
     subsumedRules = []
     # a topic is just an int index in data.domain
@@ -93,8 +94,7 @@ def prune(rules):
     rules = pruneBySubsumption(rules)
     return rules
 
-def TestRuleForInstance(testInstance, assRules, defaultTopic, testIndex):
-    global testTopicVecDict
+def TestRuleForInstance(testInstance, assRules, defaultTopic, testIndex, K, preTopicVecDict, testTopicVecDict):
     
     if isinstance(testInstance, Orange.data.Instance):
         words = set([value.variable.name for value in testInstance.get_metas().values() if value.variable.name.islower()])
@@ -124,8 +124,7 @@ def TestRuleForInstance(testInstance, assRules, defaultTopic, testIndex):
             break
     if len(preTopics) == 0: 
         preTopics.add(defaultTopic)
-        
-    global preTopicVecDict
+
     for topic in preTopics:
         if topic in preTopicVecDict.keys():
             preTopicVecDict[topic].add(testIndex)
@@ -183,50 +182,55 @@ def update(rules1, train2):
     
 def getAssociationRules():
     data = Orange.data.Table(transFileName)
-    accuracy = 0
+    
     midIndex = int(len(data) * 0.8)
     train = data[0: midIndex]
     trainList = splitTrain(train)
-    
     test = data[midIndex + 1:]
     totalTestCnt = len(test)
-    accurateCnt = 0
+    for minSup in MIN_SUPs:
+
+        rules = []
+        ruleList = []
+        print "MinSupport = " + str(minSup)
+        startTime = time.time()
+        for train in trainList:
+            tmpRules = Orange.associate.AssociationRulesSparseInducer(train, support = minSup, store_examples = True)
+            tmpRules = pruneByLhsRhs(tmpRules)
+            ruleList.append(tmpRules)
+        if len(ruleList) > 0: 
+            update(ruleList[0], trainList[1])
+            update(ruleList[1], trainList[0])   
+        rules = [rule for rules in ruleList for rule in rules]     
+        rules = prune(rules)
+        endTime = time.time()
+        print "Time for building the model:" + str(endTime - startTime)
+        
+        if Verbose:
+            Orange.associate.print_rules(rules, ["support", "confidence", "lift"])
+        print "total # of rules: " + str(len(rules))
+        for K in Ks:
+            print "top-K rules, K= " + str(K)
+            accurateCnt = 0
+            accuracy = 0
+            instanceIndex = 0
+            preTopicVecDict = {}
+            testTopicVecDict = {}
+            startTime = time.time()
+            for testInstance in test:
+                instanceIndex += 1
+                accurateCnt += TestRuleForInstance(testInstance, rules, DEFAULT_TOPIC, instanceIndex, K, preTopicVecDict, testTopicVecDict)
+            endTime = time.time()
+            print "Time for testing the model:" + str(endTime - startTime)
+            print "Time for testing one doc:" + str((endTime - startTime) * 1.0 / len(test)) 
+            accuracy += accurateCnt * 1.0 / totalTestCnt        
+            print "Accuracy:" + str(accuracy)
+            computePrecisionRecall(preTopicVecDict, testTopicVecDict)
     
-    rules = []
-    ruleList = []
-    
-    startTime = time.time()
-    for train in trainList:
-        tmpRules = Orange.associate.AssociationRulesSparseInducer(train, support = 0.05, store_examples = True)
-        tmpRules = pruneByLhsRhs(tmpRules)
-        ruleList.append(tmpRules)
-    if len(ruleList) > 0: 
-        update(ruleList[0], trainList[1])
-        update(ruleList[1], trainList[0])   
-    rules = [rule for rules in ruleList for rule in rules]     
-    rules = prune(rules)
-    endTime = time.time()
-    print "Time for building the model:" + str(endTime - startTime)
-    
-    if Verbose:
-        Orange.associate.print_rules(rules, ["support", "confidence", "lift"])
-    print "total # of rules: " + str(len(rules))
-    instanceIndex = 0
-    startTime = time.time()
-    for testInstance in test:
-        instanceIndex += 1
-        accurateCnt += TestRuleForInstance(testInstance, rules, DEFAULT_TOPIC, instanceIndex)
-    endTime = time.time()
-    print "Time for testing the model:" + str(endTime - startTime)
-    print "Time for testing one doc:" + str((endTime - startTime) * 1.0 / len(test)) 
-    accuracy += accurateCnt * 1.0 / totalTestCnt        
-    print "Accuracy:" + str(accuracy)
-    
+def computePrecisionRecall(preTopicVecDict, testTopicVecDict):
     precisionList = []
     recallList = []
     fmeasureList = []
-    global preTopicVecDict
-    global testTopicVecDict
     for topic in preTopicVecDict.keys():
         interset = testTopicVecDict[topic].intersection(preTopicVecDict[topic])
         precision = len(interset) * 1.0 / len(preTopicVecDict[topic])
