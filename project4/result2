@@ -1,0 +1,133 @@
+MinSupport = 0.05
+pruning by LHS and RHS of rules ...
+pruning by LHS and RHS of rules ...
+pruning by LHS and RHS of rules ...
+sorting rules ...
+pruning by subsumption ...
+Time for building the model:5.35218691826
+total # of rules: 136
+top-K rules, K= 1
+Time for testing the model:6.34888887405
+Time for testing one doc:0.00279317592347
+Accuracy:0.592678211948
+Precision:0.426356965787
+Recall:0.635464929586
+F-measure:0.47307734138
+top-K rules, K= 2
+Time for testing the model:7.23786497116
+Time for testing one doc:0.00318427847389
+Accuracy:0.625674252423
+Precision:0.406272558855
+Recall:0.698982511393
+F-measure:0.468955724817
+top-K rules, K= 3
+Time for testing the model:8.05058479309
+Time for testing one doc:0.00354183228909
+Accuracy:0.649812689144
+Precision:0.351979097594
+Recall:0.728226053553
+F-measure:0.425898087827
+top-K rules, K= 4
+Time for testing the model:8.59361600876
+Time for testing one doc:0.00378073735537
+Accuracy:0.660741377701
+Precision:0.326522993929
+Recall:0.750813311621
+F-measure:0.398302856768
+top-K rules, K= 5
+Time for testing the model:8.75916004181
+Time for testing one doc:0.00385356799024
+Accuracy:0.668513778347
+Precision:0.294644232399
+Recall:0.769632446415
+F-measure:0.360029937217
+
+
+MinSupport = 0.1
+pruning by LHS and RHS of rules ...
+pruning by LHS and RHS of rules ...
+pruning by LHS and RHS of rules ...
+sorting rules ...
+pruning by subsumption ...
+Time for building the model:1.43771290779
+total # of rules: 45
+top-K rules, K= 1
+Time for testing the model:3.17151117325
+Time for testing one doc:0.00139529748053
+Accuracy:0.430231705529
+Precision:0.325835217392
+Recall:0.745027124774
+F-measure:0.439210662965
+top-K rules, K= 2
+Time for testing the model:3.3359310627
+Time for testing one doc:0.00146763355156
+Accuracy:0.447829593782
+Precision:0.329734347807
+Recall:0.781193490054
+F-measure:0.453251630349
+top-K rules, K= 3
+Time for testing the model:3.43006801605
+Time for testing one doc:0.0015090488412
+Accuracy:0.466893972723
+Precision:0.33829075811
+Recall:0.820976491863
+F-measure:0.47091912277
+top-K rules, K= 4
+Time for testing the model:3.52022504807
+Time for testing one doc:0.00154871317557
+Accuracy:0.469533655961
+Precision:0.339310610695
+Recall:0.826401446655
+F-measure:0.473154211517
+top-K rules, K= 5
+Time for testing the model:3.56908392906
+Time for testing one doc:0.00157020850377
+Accuracy:0.478552573691
+Precision:0.343518738841
+Recall:0.845388788427
+F-measure:0.48141855944
+
+MinSupport = 0.15
+pruning by LHS and RHS of rules ...
+pruning by LHS and RHS of rules ...
+pruning by LHS and RHS of rules ...
+sorting rules ...
+pruning by subsumption ...
+Time for building the model:0.791074991226
+total # of rules: 26
+top-K rules, K= 1
+Time for testing the model:2.09313607216
+Time for testing one doc:0.000920869367426
+Accuracy:0.435071124798
+Precision:0.329253920187
+Recall:0.754972875226
+F-measure:0.444890240195
+top-K rules, K= 2
+Time for testing the model:2.18226599693
+Time for testing one doc:0.000960081828831
+Accuracy:0.450909224226
+Precision:0.331301859497
+Recall:0.787522603978
+F-measure:0.456273122799
+top-K rules, K= 3
+Time for testing the model:2.23488616943
+Time for testing one doc:0.00098323192672
+Accuracy:0.469753629564
+Precision:0.338902254652
+Recall:0.827305605787
+F-measure:0.473046753784
+top-K rules, K= 4
+Time for testing the model:2.29143500328
+Time for testing one doc:0.00100811042819
+Accuracy:0.473713154421
+Precision:0.340840520658
+Recall:0.835443037975
+F-measure:0.47670865422
+top-K rules, K= 5
+Time for testing the model:2.31975984573
+Time for testing one doc:0.0010205718635
+Accuracy:0.482402111747
+Precision:0.342278512266
+Recall:0.854430379747
+F-measure:0.482523789308
+
