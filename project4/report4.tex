@@ -6,6 +6,8 @@
 \usepackage{hyperref}
 \usepackage{relsize}
 \usepackage{graphicx}
+\usepackage{listings}
+\usepackage{subcaption}
 
 \newcommand{\code}[1]{\textsf{\smaller\verb~#1~}}
 
@@ -38,15 +40,44 @@ metadata of the document, the second line is the frequency vector.
 
 \subsection{Data Transformation}
 Orange supports transactional data input via the basket format. We first
-transform our input to the .basket format, then use Orange to generate
-association rules.
+transform our input to the basket format by dropping the <value> fields in
+the input file, then use Orange to generate association rules.
+We convert the topics in an document to uppercase, and keep the terms in
+the feature vector in lowercase, in order to easily separate them for later
+processing.
 
 \section{Algorithms}
+We refer the algorithm in part 1 of this project as Alg 1, and the
+algorithm with clustering in part 2 as Alg 2. For the clustering algorithm in
+part 2, we use K-means.
+
 \subsection{Sorting Criteria}
+After trying out several sorting criteria, we finally decided to sort the rules
+by [lift, confidence, support]. That is to first order rules by lift; then for
+rules with same lift, order them by confidence; finally order rules with same
+lift and confidence by support.
+
+The reason behind our choice is that there are a lot of rules with
+high confidence and support that only predicts one dominant topic. First sorting
+by lift can make rules that have good ability to predict rare topics
+appear at the top, so that they get a better chance to be used.
+
 \subsection{Subsumption}
+We use the following algorithm to determine rule subsumption:
+
+Rule r1 is subsumption by rule r2 if all of the following conditions are
+satisfied:
+\begin{enumerate}
+  \item r2 comes before r1 in the list of sorted rules.
+  \item r1 can not predict any new topics compared to r2. That is: r1.right
+  $\subseteq$ r2.right.
+  \item all data instances that match r1 also matched r2. That is:
+  r1.match\_both $\subseteq$ r2.match\_both.
+\end{enumerate}
+
 \subsection{Handling Data Skew}
+
 \subsection{Accuracy for Multiple Topics}
-\subsection{Clustering}
 
 
 \section{Parameter Values}
@@ -54,38 +85,6 @@ association rules.
 \subsection{K-most confident rules}
 \subsection{Number of clusters}
 
-\section{Evaluation}
+\input{eval}
 
-\subsection{Execution Time}
-
-\begin{figure}
-\centering
-\includegraphics[width=0.8\textwidth]{Scalability}
-\caption{\footnotesize Execution time of Hierarchical and K-means clustering
-with Cosine and Jaccard similarities.}
-\label{Fig:scalability}
-\end{figure}
-
-\subsection{Quality}
-\subsubsection{Accuracy}
-
-\subsubsection{Precision and Recall}
-
-\begin{figure}
-\centering
-\includegraphics[width=0.8\textwidth]{Entropy}
-\caption{\footnotesize The entropy of the clustering for Hierarchical and K-means
-with Cosine and Jaccard similarities.}
-\label{Fig:entropy}
-\end{figure}
-
-\subsubsection{Skew}
-
-\begin{figure}[b!]
-\centering
-\includegraphics[width=0.8\textwidth]{Skew}
-\caption{\footnotesize The skew of the clustering for Hierarchical and K-means
-with Cosine and Jaccard similarities.}
-\label{Fig:skew}
-\end{figure}
 \end{document}
