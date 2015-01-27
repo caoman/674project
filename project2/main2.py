@@ -27,9 +27,9 @@ class TopicClass:
     
     def addDoc(self, doc):
         self.docList.append(doc)
-        for token, val in doc.feaVec.iteritems():
+        for token, val in doc.feaVec.items():
             self.wordCnt += val
-            if self.wordDocVec.has_key(token): self.wordDocVec[token] += 1
+            if token in self.wordDocVec: self.wordDocVec[token] += 1
             else: self.wordDocVec[token] = 1
 
 #The heap records the top-K docs in the training set with largest similarities with the current test doc
@@ -67,12 +67,12 @@ def calCosSim(vec1, vec2):
     numerator = 0
     denominator1 = denominator2 = 0
     
-    for token, val in vec1.iteritems():
+    for token, val in vec1.items():
         denominator1 += val * val
-        if vec2.has_key(token):
+        if token in vec2:
             numerator += val * vec2[token]
     
-    for val in vec2.itervalues():
+    for val in vec2.values():
         denominator2 += val * val
     
     if denominator1 == 0 or denominator2 == 0: return 0    
@@ -82,7 +82,7 @@ def isRelated(doc, topicDict):
     global numTopics
 
     #sort the topics in descending order according to the values
-    sortedTopicDict = sorted(topicDict.iteritems(), key=operator.itemgetter(1), reverse=True)
+    sortedTopicDict = sorted(iter(topicDict.items()), key=operator.itemgetter(1), reverse=True)
     for i in range(numTopics):
         if i < len(sortedTopicDict): 
             topic = sortedTopicDict[i][0]
@@ -104,7 +104,7 @@ def classifyWithKNN():
     startTime = time.time()
     K = selectK()
     endTime = time.time()
-    print "KNN Training time:" + str(endTime - startTime)
+    print("KNN Training time:" + str(endTime - startTime))
     
     relCnt = 0
     testDocSize = len(testDocList)
@@ -120,7 +120,7 @@ def classifyWithKNN():
         
         for tuple in heap.heap:
             for topic in tuple[1]:
-                if topicDict.has_key(topic):
+                if topic in topicDict:
                     topicDict[topic] += 1
                 else:
                     topicDict[topic] = 1
@@ -128,10 +128,10 @@ def classifyWithKNN():
         if isRelated(testDoc, topicDict):
             relCnt += 1
     endTime = time.time()
-    print "KNN Testing time for one document:" + str(float(endTime - startTime) / len(testDocList))
+    print("KNN Testing time for one document:" + str(float(endTime - startTime) / len(testDocList)))
     
     precision = float(relCnt) / testDocSize
-    print "KNN Precision:" + str(precision)
+    print("KNN Precision:" + str(precision))
       
 #Not consider the count of the words, prob(w | Ci) = countDocs(contains(w), Ci) / totalDocs(Ci)
 def classifyWithBayes():
@@ -147,32 +147,32 @@ def classifyWithBayes():
     for doc in trainDocList:
         for docTopic in doc.topics:
             docCnt += 1     # Count the doc for multiple times, if it has multiple topics
-            if classDict.has_key(docTopic):
+            if docTopic in classDict:
                 classDict[docTopic].addDoc(doc)
             else:
                 classDict[docTopic] = TopicClass(doc, docTopic)
     
-        for w in doc.feaVec.iterkeys():
-            if wordDocFreq.has_key(w): wordDocFreq[w] += 1
+        for w in doc.feaVec.keys():
+            if w in wordDocFreq: wordDocFreq[w] += 1
             else: wordDocFreq[w] = 1
 
     endTime = time.time()
-    print "Bayes Training time: " + str(endTime - startTime)
+    print("Bayes Training time: " + str(endTime - startTime))
     topicDict = {}
     relCnt = 0
     
     startTime = time.time()
     for doc in testDocList:
-        for topicClass in classDict.itervalues():
+        for topicClass in classDict.values():
             priorProb = float(len(topicClass.docList)) / docCnt
             itemsProb = 1
-            for token in doc.feaVec.keys():
-                if wordDocFreq.has_key(token):
+            for token in list(doc.feaVec.keys()):
+                if token in wordDocFreq:
                     bayesP = float(wordDocFreq[token]) / len(trainDocList)
                 else:   #the word doesn't occure in the training dataset
                     bayesP = 0.01 / len(trainDocList)
                 itemOcc = bayesM * bayesP
-                if topicClass.wordDocVec.has_key(token):
+                if token in topicClass.wordDocVec:
                     itemOcc += topicClass.wordDocVec[token]
                 itemsProb *= float(itemOcc) / (len(topicClass.docList) + bayesM)
             tmpProb = itemsProb * priorProb
@@ -181,9 +181,9 @@ def classifyWithBayes():
             relCnt += 1    
     endTime = time.time()
 
-    print "Bayes Testing time for one document: " + str((endTime - startTime)/float(len(testDocList)))
+    print("Bayes Testing time for one document: " + str((endTime - startTime)/float(len(testDocList))))
     precision = float(relCnt) / len(testDocList)
-    print "Bayes precision:" + str(precision)
+    print("Bayes precision:" + str(precision))
 
 '''
 # Consider the count of each word, prob(w | Ci) = count(w in Ci) / totalWords(Ci)

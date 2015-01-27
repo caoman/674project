@@ -38,7 +38,7 @@ def getWordNetPos(treebankPos):
 
 def getSynonyms(word):
     global synonymDic
-    if synonymDic.has_key(word): return synonymDic[word]
+    if word in synonymDic: return synonymDic[word]
     synonyms = [lemma for syn in wordnet.synsets(word) for lemma in syn.lemma_names]
     synonymDic[word] = synonyms
     return synonyms
@@ -90,7 +90,7 @@ class Doc:
         tokens = self.tokens
         freqVec = {}
         for token in tokens:
-            if freqVec.has_key(token):
+            if token in freqVec:
                 freqVec[token] += 1
             else:
                 freqVec[token] = 1
@@ -99,7 +99,7 @@ class Doc:
         #a simple function to determine the weight of a title word, just based on the length of the document
         titleWeight = int(1 + len(tokens) * 0.05)
 
-        for k in freqVec.keys():
+        for k in list(freqVec.keys()):
             if k in titleWords:
                 freqVec[k] += titleWeight
             if freqVec[k]==1:
@@ -118,11 +118,11 @@ class Doc:
         max_freq = 1
         tfidfVec = {}
         freqVec = self.getFreqVec()
-        for v in freqVec.itervalues():
+        for v in freqVec.values():
             if v>max_freq:
                 max_freq=v
 
-        for token, freq in freqVec.iteritems():
+        for token, freq in freqVec.items():
             tf = 0.5 + (0.5 * freq) / max_freq
             tfidf = tf * tokenIDF[token]
             tfidfVec[token] = tfidf
@@ -144,7 +144,7 @@ def computeIDF():
 
 #output vector
 def outputVec(outfile, vector, prefix):
-    vecStr = prefix + "\n{" + ",".join(['"' + key + '"' + ":" + str(val) for key, val in vector.iteritems()]) + "}\n"
+    vecStr = prefix + "\n{" + ",".join(['"' + key + '"' + ":" + str(val) for key, val in vector.items()]) + "}\n"
     outfile.write(vecStr)
 
 #process each file
@@ -180,7 +180,7 @@ def processFile(filename, outfile):
         if body is not None: bodyText = body.getText()
         
         id = entry.get("NEWID")
-        print id
+        print(id)
         #titleText is also considered as part of bodyText, in case the bodyText is empty.
         doc = Doc(id, topics, titleText, places, titleText + "." + bodyText)
         docList.append(doc)
@@ -203,15 +203,15 @@ if __name__ == "__main__":
         procDocCnt = sys.argv[1]
     
     feaVecFile = open("FreqVectors.txt", "w") 
-    print "Computing Train Frequency vector..."
+    print("Computing Train Frequency vector...")
     baseName = "freqVector"
     for file in os.listdir(dirPrefix):
         processFile(dirPrefix + file, feaVecFile)
     feaVecFile.close()
-    print "Frequency vector is done!"
+    print("Frequency vector is done!")
 
     #tfidfFile = open("TraintfidfVectors.txt", "w")
-    print "Computing Train TFIDF vector..."
+    print("Computing Train TFIDF vector...")
     computeIDF()
 
     tfidfFile = open("TfidfVector.txt", "w")
@@ -220,5 +220,5 @@ if __name__ == "__main__":
         docInfo = "{'NEWID':'" + doc.id + "' ,'TOPICS':" + doc.topics + " ,'PLACES':" + doc.places + "}"
         outputVec(tfidfFile, doc.getTFIDFVec(), docInfo)
     tfidfFile.close()
-    print "TFIDF vector is done!"
+    print("TFIDF vector is done!")
     
